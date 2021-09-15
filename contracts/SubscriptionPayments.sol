@@ -7,7 +7,6 @@ import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract SubscriptionPayments is Ownable {
-
     ISubscriptionData public subscriptionData;
     //For improved precision
     uint256 constant PRECISION = 10**25;
@@ -33,6 +32,8 @@ contract SubscriptionPayments is Ownable {
         subscriptionData = ISubscriptionData(d);
     }
 
+    event UserCharged(address indexed user, uint256 indexed fee);
+
     function chargeUser(
         address u,
         string[] memory p,
@@ -44,12 +45,11 @@ contract SubscriptionPayments is Ownable {
         );
         uint256 fee = 0;
         for (uint256 i = 0; i < p.length; i++) {
-
             fee += v[i] * subscriptionData.priceData(p[i]);
         }
         uint256 discount = fee - _calculateDiscount(u, fee);
         uint256 underlying = _calculatePriceInArgo(discount);
-        
+
         IERC20 erc20 = IERC20(subscriptionData.underlying());
         require(
             erc20.balanceOf(u) >= underlying,
@@ -60,6 +60,7 @@ contract SubscriptionPayments is Ownable {
             "ArgoPayments: Insufficient allowance"
         );
         erc20.transferFrom(u, subscriptionData.escrow(), underlying);
+        emit UserCharged(u, underlying);
     }
 
     /**
@@ -89,10 +90,8 @@ contract SubscriptionPayments is Ownable {
             u,
             address(subscriptionData.stakedToken())
         );
-        uint256[] memory discountSlabs = subscriptionData
-            .slabs();
-        uint256[] memory discountPercents = subscriptionData
-            .discountPercents();
+        uint256[] memory discountSlabs = subscriptionData.slabs();
+        uint256[] memory discountPercents = subscriptionData.discountPercents();
         uint256 length = discountSlabs.length;
         uint256 percent = 0;
         for (uint256 i = 0; i < length; i++) {
@@ -104,6 +103,7 @@ contract SubscriptionPayments is Ownable {
         }
         return (a * percent * PRECISION) / PERCENT;
     }
+
     /**
      * @notice update subscriptionDataContract
      * @param d data contract address
@@ -115,6 +115,7 @@ contract SubscriptionPayments is Ownable {
         );
         subscriptionData = ISubscriptionData(d);
     }
+
     /**
      * @notice withdraw any erc20 send accidentally to the contract
      * @param t address of erc20 token

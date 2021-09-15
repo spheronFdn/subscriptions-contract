@@ -18,7 +18,7 @@ describe("ArGo Subscription Data test cases", function() {
     let token;
     let first, second, third, vault;
     let params = ["build", "sockets", "hooks"]
-    let prices = [BigNumber.from("12").mul(ethers.BigNumber.from(10).pow(18)), BigNumber.from("1").mul(ethers.BigNumber.from(10).pow(18)), BigNumber.from("10").mul(ethers.BigNumber.from(10).pow(18))]
+    const prices = [BigNumber.from(10).pow(17), BigNumber.from(5).mul(BigNumber.from(10).pow(17)), BigNumber.from(10).pow(16)]
     let priceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd"
     const discountSlabs = [amount, amount2, amount3];
     const discountPercents = [10, 15, 20];
@@ -78,6 +78,7 @@ describe("ArGo Subscription Data test cases", function() {
             fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
         let underlying = fee.mul(ethers.BigNumber.from(10).pow(18)).div(await subscriptionData.getUnderlyingPrice())
+        console.log(underlying)
         expect(await token.balanceOf(third.address)).to.be.equal(underlying);
     });
     it("Should charge correct amount with discount", async function() {
