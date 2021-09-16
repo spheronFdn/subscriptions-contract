@@ -5,7 +5,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 
-const data = "0x4FB992Ad1C30B7AEdCA04e9b81EEc3DBCA1B2A7E"
+const data = "0x069ca3a23bc4B75E9700E34657370A6A1178E1F3"
 async function main() {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.

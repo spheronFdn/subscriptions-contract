@@ -178,13 +178,6 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
     }
 
     /**
-     * @notice update undelying token address
-     * @param u new underlying token address
-     */
-    function updateToken(address u) public onlyManager {
-        underlying = IERC20(u);
-    }
-    /**
      * @notice returns discount slabs array
      */
     function slabs() external view returns(uint256[] memory) {
@@ -335,4 +328,5 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         );
         erc20.transfer(msg.sender, a);
     }
+    
 }

@@ -20,7 +20,7 @@ async function main() {
     const Payments = await hre.ethers.getContractFactory("SubscriptionData");
     const payments = Payments.attach(address);
     const tx = await payments.updateEscrow(escrow);
-    console.log("Greeter deployed to:", tx.hash);
+    console.log("Tx hash:", tx.hash);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

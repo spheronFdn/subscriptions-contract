@@ -31,7 +31,7 @@ async function main() {
     const data = await Data.deploy(params, prices, argoTestToken, escrow, discountSlabs, discountPercents, priceFeed, argoTestToken, priceFeedSymbol);
     await data.deployed();
 
-    console.log("Greeter deployed to:", data.address);
+    console.log("Payments contract deployed to:", data.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
