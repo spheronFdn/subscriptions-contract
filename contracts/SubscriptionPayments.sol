@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISubscriptionData.sol";
-import "hardhat/console.sol";
 import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -11,8 +10,8 @@ contract SubscriptionPayments is Ownable {
     //For improved precision
     uint256 constant PRECISION = 10**25;
     uint256 constant PERCENT = 100 * PRECISION;
-    //decimal precision
-    uint256 constant DECIMAL = 10**18;
+
+    event UserCharged(address indexed user, uint256 indexed fee);
 
     modifier onlyManager() {
         bool isManager = subscriptionData.managerByAddress(msg.sender);
@@ -32,25 +31,26 @@ contract SubscriptionPayments is Ownable {
         subscriptionData = ISubscriptionData(d);
     }
 
-    event UserCharged(address indexed user, uint256 indexed fee);
-
     function chargeUser(
         address u,
         string[] memory p,
-        uint256[] memory v
+        uint256[] memory v,
+        address t
     ) external onlyManager {
         require(
             p.length == v.length,
             "ArgoSubscriptionPayments: unequal length of array"
         );
+        require(subscriptionData.isAcceptedToken(t), "ArgoSubscriptionPayments: Token not accepted");
+
         uint256 fee = 0;
         for (uint256 i = 0; i < p.length; i++) {
             fee += v[i] * subscriptionData.priceData(p[i]);
         }
         uint256 discount = fee - _calculateDiscount(u, fee);
-        uint256 underlying = _calculatePriceInArgo(discount);
+        uint256 underlying = _calculatePriceInToken(discount, t);
 
-        IERC20 erc20 = IERC20(subscriptionData.underlying());
+        IERC20 erc20 = IERC20(t);
         require(
             erc20.balanceOf(u) >= underlying,
             "ArgoPayments: User have insufficient balance"
@@ -68,9 +68,23 @@ contract SubscriptionPayments is Ownable {
      * @param a total amount in USD
      * @return price in ArGo
      */
-    function _calculatePriceInArgo(uint256 a) internal view returns (uint256) {
-        uint256 underlyingPrice = subscriptionData.getUnderlyingPrice();
-        return (a * DECIMAL) / underlyingPrice;
+    function _calculatePriceInToken(uint256 a, address t)
+        internal
+        returns (uint256)
+    {
+        (
+            string memory symbol,
+            uint128 decimals,
+            address tokenAddress,
+            bool accepted,
+            bool isChainLinkFeed,
+            address priceFeedAddress,
+            uint128 priceFeedPrecision
+        ) = subscriptionData.acceptedTokens(t);
+        uint256 precision = 10**decimals;
+        a = _toPrecision(a, subscriptionData.usdPricePrecision(), decimals);
+        uint256 underlyingPrice = subscriptionData.getUnderlyingPrice(t);
+        return (a * precision) / underlyingPrice;
     }
 
     /**
@@ -114,6 +128,27 @@ contract SubscriptionPayments is Ownable {
             "ArgoSubscriptionPayments: data contract address can not be zero address"
         );
         subscriptionData = ISubscriptionData(d);
+    }
+
+    /**
+     * @notice trim or add number for certain precision as required
+     * @param a amount/number that needs to be modded
+     * @param p older precision
+     * @param n new desired precision
+     * @return price of underlying token in usd
+     */
+    function _toPrecision(
+        uint256 a,
+        uint128 p,
+        uint128 n
+    ) internal view returns (uint256) {
+        int128 decimalFactor = int128(p) - int128(n);
+        if (decimalFactor > 0) {
+            a = a / (10**uint128(decimalFactor));
+        } else if (decimalFactor < 0) {
+            a = a * (10**uint128(-1 * decimalFactor));
+        }
+        return a;
     }
 
     /**

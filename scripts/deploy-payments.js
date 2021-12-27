@@ -19,7 +19,7 @@ async function main() {
     const payments = await Payments.deploy(data);
     await payments.deployed();
 
-    console.log("Greeter deployed to:", payments.address);
+    console.log("Payments contract deployed to:", payments.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

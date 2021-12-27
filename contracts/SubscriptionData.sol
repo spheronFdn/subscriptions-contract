@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IStaking.sol";
 import "./utils/GovernanceOwnable.sol";
 import "./utils/Pausable.sol";
 import "./utils/MultiOwnable.sol";
 import "./interfaces/IDiaOracle.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract SubscriptionData is GovernanceOwnable, Pausable {
     mapping(string => uint256) public priceData;
@@ -24,15 +24,6 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
     //erc20 used for staking
     IERC20 public stakedToken;
 
-    //Oracle instance
-    IDiaOracle public priceFeed;
-
-    //Oracle feeder symbol
-    string public feederSymbol;
-
-    //erc20 used for payments
-    IERC20 public underlying;
-
     // would be true if discounts needs to be deducted
     bool public discountsEnabled;
     //Data for discounts
@@ -42,39 +33,60 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
     }
     Discount[] public discountSlabs;
 
+    //Accepted tokens
+    struct Token {
+        string symbol;
+        uint128 decimals;
+        address tokenAddress;
+        bool accepted;
+        bool isChainLinkFeed;
+        address priceFeedAddress;
+        uint128 priceFeedPrecision;
+    }
+
+    //mapping of accpeted tokens
+    mapping(address => Token) public acceptedTokens;
+    //mapping of bool for accepted tokens
+    mapping(address => bool) public isAcceptedToken;
+
+    // list of accepted tokens
+    address[] public tokens;
+
+    //values prcision, it will be in USD, like USDPRICE * 10 **18
+    uint128 public usdPricePrecision;
+
     event SubscriptionParameter(uint256 indexed price, string param);
     event DeletedParameter(string param);
+    event TokenAdded(
+        address indexed tokenAddress,
+        uint128 indexed decimals,
+        address indexed priceFeedAddress,
+        string symbol,
+        bool isChainLinkFeed,
+        uint128 priceFeedPrecision
+    );
+    event TokenRemoved(address indexed tokenAddress);
 
     /**
      * @notice initialise the contract
      * @param _params array of name of subscription parameter
-     @ @param _prices array of prices of subscription parameters
-     * @param u underlying token for payments
+     * @param _prices array of prices of subscription parameters
      * @param e escrow address for payments
      * @param slabAmounts_ array of amounts that seperates different slabs of discount
      * @param slabPercents_ array of percent of discount user will get
-     * @param a price feed aggregator address
      * @param s address of staked token
-     % @param f price feed symbol
      */
     constructor(
         string[] memory _params,
         uint256[] memory _prices,
-        address u,
         address e,
         uint256[] memory slabAmounts_,
         uint256[] memory slabPercents_,
-        address a,
-        address s,
-        string memory f
+        address s
     ) {
         require(
             _params.length == _prices.length,
             "ArgoSubscriptionData: unequal length of array"
-        );
-        require(
-            u != address(0),
-            "ArgoSubscriptionData: Token address can not be zero address"
         );
         require(
             e != address(0),
@@ -83,14 +95,6 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         require(
             s != address(0),
             "ArgoSubscriptionData: staked token address can not be zero address"
-        );
-        require(
-            a != address(0),
-            "ArgoSubscriptionData: price feed address can not be zero address"
-        );
-        require(
-            bytes(f).length != 0,
-            "ArgoSubscriptionData: price feed symbol should have a value"
         );
         require(
             slabAmounts_.length == slabPercents_.length,
@@ -104,10 +108,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             params.push(name);
             emit SubscriptionParameter(price, name);
         }
-        priceFeed = IDiaOracle(a);
         stakedToken = IERC20(s);
-        feederSymbol = f;
-        underlying = IERC20(u);
         escrow = e;
         for (uint256 i = 0; i < slabAmounts_.length; i++) {
             Discount memory _discount = Discount(
@@ -116,6 +117,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             );
             discountSlabs.push(_discount);
         }
+        usdPricePrecision = 18;
     }
 
     /**
@@ -173,7 +175,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      * @notice update escrow address
      * @param e address for new escrow
      */
-    function updateEscrow(address e) public onlyManager {
+    function updateEscrow(address e) external onlyManager {
         escrow = e;
     }
 
@@ -225,7 +227,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      * @notice enable discounts for users.
      * @param s address of staking manager
      */
-    function enableDiscounts(address s) public onlyManager {
+    function enableDiscounts(address s) external onlyManager {
         require(
             s != address(0),
             "ArgoSubscriptionData: staking manager address can not be zero address"
@@ -234,18 +236,118 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         stakingManager = IStaking(s);
     }
 
+        /**
+     * @notice add new token for payments
+     * @param s token symbols
+     * @param t token address
+     * @param d token decimals
+     */
+    function addNewTokens(
+        string[] memory s,
+        address[] memory t,
+        uint128[] memory d,
+        bool[] memory isChainLinkFeed_,
+        address[] memory priceFeedAddress_,
+        uint128[] memory priceFeedPrecision_
+    ) external onlyGovernanceAddress {
+        require(
+            s.length == t.length,
+            "ArgoSubscriptionData: token symbols and token address array length do not match"
+        );
+
+        require(
+            s.length == d.length,
+            "ArgoSubscriptionData: token symbols and token decimal array length do not match"
+        );
+
+        require(
+            s.length == priceFeedAddress_.length,
+            "ArgoSubscriptionData: token symbols and price feed array length do not match"
+        );
+
+        require(
+            s.length == isChainLinkFeed_.length,
+            "ArgoSubscriptionData: token symbols and is chainlink array length do not match"
+        );
+        require(
+            s.length == priceFeedAddress_.length,
+            "ArgoSubscriptionData: token price feed  and token decimal array length do not match"
+        );
+        require(
+            s.length == priceFeedPrecision_.length,
+            "ArgoSubscriptionData: token price feed precision and token decimal array length do not match"
+        );
+
+        for (uint256 i = 0; i < s.length; i++) {
+            if (!acceptedTokens[t[i]].accepted) {
+                Token memory token = Token(
+                    s[i],
+                    d[i],
+                    t[i],
+                    true,
+                    isChainLinkFeed_[i],
+                    priceFeedAddress_[i],
+                    priceFeedPrecision_[i]
+                );
+                acceptedTokens[t[i]] = token;
+                tokens.push(t[i]);
+                isAcceptedToken[t[i]] = true;
+                emit TokenAdded(
+                    t[i],
+                    d[i],
+                    priceFeedAddress_[i],
+                    s[i],
+                    isChainLinkFeed_[i],
+                    priceFeedPrecision_[i]
+                );
+            }
+        }
+    }
+
+    /**
+     * @notice remove tokens for payment
+     * @param t token address
+     */
+    function removeTokens(address[] memory t) external onlyGovernanceAddress {
+        require(t.length > 0, "ArgoSubscriptionData: array length cannot be zero");
+
+        for (uint256 i = 0; i < t.length; i++) {
+            if (acceptedTokens[t[i]].accepted) {
+                require(tokens.length > 1, "Cannot remove all payment tokens");
+                for (uint256 j = 0; j < tokens.length; j++) {
+                    if (tokens[j] == t[i]) {
+                        tokens[j] = tokens[tokens.length - 1];
+                        tokens.pop();
+                        acceptedTokens[t[i]].accepted = false;
+                    }
+                    isAcceptedToken[t[i]] = false;
+                    emit TokenRemoved(t[i]);
+                }
+            }
+        }
+    }
+
     /**
      * @notice disable discounts for users
      */
-    function disableDiscounts() public onlyManager {
+    function disableDiscounts() external onlyManager {
         discountsEnabled = false;
+    }
+
+    /**
+     * @notice change precision of USD value
+     * @param p new precision value
+     */
+    function changeUsdPrecision(uint128 p) external onlyManager {
+        require(p != 0, "ArgoSubscriptionData: USD to precision can not be zero");
+        usdPricePrecision = p;
     }
 
     /**
      * @notice update staked token address
      * @param s new staked token address
      */
-    function updateStakedToken(address s) public onlyGovernanceAddress {
+    function updateStakedToken(address s) external onlyGovernanceAddress {
         require(
             s != address(0),
             "ArgoSubscriptionData: staked token address can not be zero address"
@@ -253,53 +355,65 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         stakedToken = IERC20(s);
     }
 
-    /**
-     * @notice update oracle feeder address
-     * @param o new oracle feeder
-     */
-    function updateFeederAddress(address o) public onlyGovernanceAddress {
-        require(
-            o != address(0),
-            "ArgoSubscriptionData: oracle feeder address can not be zero address"
-        );
-        priceFeed = IDiaOracle(o);
-    }
-
-    /**
-     * @notice update oracle feeder symbol
-     * @param s symbol of token
-     */
-    function updateFeederTokenSymbol(string memory s)
-        public
-        onlyGovernanceAddress
-    {
-        require(
-            bytes(s).length != 0,
-            "ArgoSubscriptionData: symbol length can not be zero"
-        );
-        feederSymbol = s;
-    }
-
-    /**
-     * @notice update underlying token address
-     * @param u underlying token address
-     */
-    function updateUnderlyingToken(address u) public onlyGovernanceAddress {
-        require(
-            u != address(0),
-            "ArgoSubscriptionData: token address can not be zero address"
-        );
-        underlying = IERC20(u);
-    }
-
-    /**
+   /**
      * @notice get price of underlying token
+     * @param t underlying token address
      * @return price of underlying token in usd
      */
-    function getUnderlyingPrice() public view returns (uint256) {
-        (uint128 price, uint128 timeStamp) = priceFeed.getValue(feederSymbol);
-        return uint256(price) * (10**10);
+    function getUnderlyingPrice(address t) public view returns (uint256) {
+        Token memory acceptedToken = acceptedTokens[t];
+
+        int128 decimalFactor = int128(acceptedToken.decimals) -
+            int128(acceptedToken.priceFeedPrecision);
+        uint256 _price;
+        if (acceptedToken.isChainLinkFeed) {
+            AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(
+                acceptedToken.priceFeedAddress
+            );
+            (
+                uint80 roundID,
+                int256 price,
+                uint256 startedAt,
+                uint256 timeStamp,
+                uint80 answeredInRound
+            ) = chainlinkFeed.latestRoundData();
+            _price = uint256(price);
+        } else {
+            IDiaOracle priceFeed = IDiaOracle(acceptedToken.priceFeedAddress);
+            (uint128 price, uint128 timeStamp) = priceFeed.getValue(
+                acceptedTokens[t].symbol
+            );
+            _price = price;
+        }
+        uint256 price = _toPrecision(
+            uint256(_price),
+            acceptedToken.priceFeedPrecision,
+            acceptedToken.decimals
+        );
+        return price;
     }
+
+    /**
+     * @notice trim or add number for certain precision as required
+     * @param a amount/number that needs to be modded
+     * @param p older precision
+     * @param n new desired precision
+     * @return price of underlying token in usd
+     */
+    function _toPrecision(
+        uint256 a,
+        uint128 p,
+        uint128 n
+    ) internal pure returns (uint256) {
+        int128 decimalFactor = int128(p) - int128(n);
+        if (decimalFactor > 0) {
+            a = a / (10**uint128(decimalFactor));
+        } else if (decimalFactor < 0) {
+            a = a * (10**uint128(-1 * decimalFactor));
+        }
+        return a;
+    }
+
 
     /**
      * @notice pause charge user functions
