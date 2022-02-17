@@ -5,7 +5,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 
-const data = "0x069ca3a23bc4B75E9700E34657370A6A1178E1F3"
+const data = "0x15a0432dc080daa0865316233034ef9eb2d5b409"
 async function main() {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.
@@ -15,10 +15,14 @@ async function main() {
     // await hre.run('compile');
 
     // We get the contract to deploy
-    const Payments = await hre.ethers.getContractFactory("SubscriptionPayments");
-    const payments = await Payments.deploy(data);
-    await payments.deployed();
-
+    const constructorArgs = ["0x15a0432dc080daa0865316233034ef9eb2d5b409"]
+    // const Payments = await hre.ethers.getContractFactory("SubscriptionPayments");
+    // const payments = await Payments.deploy(...constructorArgs);
+    // await payments.deployed();
+    await hre.run("verify:verify", {
+        address: "0x815788c8a99fd5f158c049ba9805646869ef3ef2",
+        constructorArguments: constructorArgs,
+      });  
     console.log("Payments contract deployed to:", payments.address);
 }
 

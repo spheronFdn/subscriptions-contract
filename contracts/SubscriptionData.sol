@@ -241,6 +241,10 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      * @param s token symbols
      * @param t token address
      * @param d token decimals
+     * @param isChainLinkFeed_ if price feed chain link feed
+     * @param priceFeedAddress_ address of price feed
+     * @param priceFeedPrecision_ precision of price feed
+
      */
     function addNewTokens(
         string[] memory s,
