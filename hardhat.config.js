@@ -1,8 +1,11 @@
-require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 
+require("@nomiclabs/hardhat-waffle");
+const dotenv = require("dotenv");
+dotenv.config();
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async(taskArgs, hre) => {
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     const accounts = await hre.ethers.getSigners();
 
     for (const account of accounts) {
@@ -17,11 +20,19 @@ task("accounts", "Prints the list of accounts", async(taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-    solidity: "0.8.4",
+    solidity: {
+        version: "0.8.4",
+        settings: {
+            optimizer: {
+                enabled: true,
+                runs: 1000,
+            },
+        },
+    },
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
-        apiKey: "ZE2QGS32E2DTA2P37IXQG9Z5DT81QQV5C8"
+        apiKey: "EEGAHTH42UJXXTB3X1T5J5U7W8IGPUVSHB"
     },
     networks: {
 
@@ -65,7 +76,7 @@ module.exports = {
         matic: {
             url: `https://rpc-mumbai.maticvigil.com`, // <---- YOUR INFURA ID! (or it won't work)
             accounts: {
-                mnemonic: 'company loud estate century olive gun tribe pulse bread play addict amount',
+                mnemonic: process.env.MNEMONIC,
             },
         },
 
