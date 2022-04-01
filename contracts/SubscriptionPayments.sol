@@ -13,6 +13,10 @@ contract SubscriptionPayments is Ownable {
 
     event UserCharged(address indexed user, uint256 indexed fee);
 
+    /**
+     * @notice only manager modifier
+     *
+     */
     modifier onlyManager() {
         bool isManager = subscriptionData.managerByAddress(msg.sender);
         address owner = owner();
@@ -23,6 +27,10 @@ contract SubscriptionPayments is Ownable {
         _;
     }
 
+    /**
+     * @notice initialise the contract
+     * @param d address of subscription data contract
+     */
     constructor(address d) {
         require(
             d != address(0),
@@ -31,6 +39,13 @@ contract SubscriptionPayments is Ownable {
         subscriptionData = ISubscriptionData(d);
     }
 
+    /**
+     * @notice charge user for subscription
+     * @param u user address
+     * @param p parameters list for subscription payment
+     * @param v value list for subscription payment
+     * @param t address of token contract
+     */
     function chargeUser(
         address u,
         string[] memory p,
@@ -41,7 +56,10 @@ contract SubscriptionPayments is Ownable {
             p.length == v.length,
             "ArgoSubscriptionPayments: unequal length of array"
         );
-        require(subscriptionData.isAcceptedToken(t), "ArgoSubscriptionPayments: Token not accepted");
+        require(
+            subscriptionData.isAcceptedToken(t),
+            "ArgoSubscriptionPayments: Token not accepted"
+        );
 
         uint256 fee = 0;
         for (uint256 i = 0; i < p.length; i++) {
@@ -66,7 +84,7 @@ contract SubscriptionPayments is Ownable {
     /**
      * @dev calculate price in ARGO
      * @param a total amount in USD
-     * @return price in ArGo
+     * @return t token address
      */
     function _calculatePriceInToken(uint256 a, address t)
         internal
@@ -91,7 +109,6 @@ contract SubscriptionPayments is Ownable {
      * @dev calculate discount that user gets for staking
      * @param u address of user that needs to be charged
      * @param a amount the user will pay without discount
-     * @return discount that user will get
      */
     function _calculateDiscount(address u, uint256 a)
         internal
