@@ -22,7 +22,7 @@ contract SubscriptionPayments is Ownable {
         address owner = owner();
         require(
             isManager || msg.sender == owner,
-            "Only manager and owner can call this function"
+            "Access restricted to manager or owner"
         );
         _;
     }
@@ -34,9 +34,14 @@ contract SubscriptionPayments is Ownable {
     constructor(address d) {
         require(
             d != address(0),
-            "ArgoSubscriptionPayments: SubscriptionData contract address can not be zero address"
+            "ArgoSubscriptionPayments: Invalid address of subscription data contract"
         );
         subscriptionData = ISubscriptionData(d);
+    }
+
+    // unchecked iterator increment for gas optimization
+    function unsafe_inc(uint x) private pure returns (uint) {
+        unchecked { return x + 1;}
     }
 
     /**
@@ -62,7 +67,8 @@ contract SubscriptionPayments is Ownable {
         );
 
         uint256 fee = 0;
-        for (uint256 i = 0; i < p.length; i++) {
+
+        for (uint256 i = 0; i < p.length; i = unsafe_inc(i)) {
             fee += v[i] * subscriptionData.priceData(p[i]);
         }
         uint256 discount = fee - _calculateDiscount(u, fee);
@@ -125,7 +131,7 @@ contract SubscriptionPayments is Ownable {
         uint256[] memory discountPercents = subscriptionData.discountPercents();
         uint256 length = discountSlabs.length;
         uint256 percent = 0;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; i = unsafe_inc(i)) {
             if (stake >= discountSlabs[i]) {
                 percent = discountPercents[i];
             } else {
@@ -174,10 +180,11 @@ contract SubscriptionPayments is Ownable {
      * @param a amount of tokens to withdraw
      */
     function withdrawERC20(address t, uint256 a) external onlyManager {
+        require(a > 0, "Amount must be greater than 0");
         IERC20 erc20 = IERC20(t);
         require(
             erc20.balanceOf(address(this)) >= a,
-            "ArgoSubscriptionData: Insufficient tokens in contract"
+            "ArgoSubscriptionData: Insufficient token balance in contract"
         );
         erc20.transfer(msg.sender, a);
     }
