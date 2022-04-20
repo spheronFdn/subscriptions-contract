@@ -40,7 +40,7 @@ contract SubscriptionPayments is Ownable {
     }
 
     // unchecked iterator increment for gas optimization
-    function unsafe_inc(uint x) private pure returns (uint) {
+    function unsafeInc(uint x) private pure returns (uint) {
         unchecked { return x + 1;}
     }
 
@@ -68,7 +68,7 @@ contract SubscriptionPayments is Ownable {
 
         uint256 fee = 0;
 
-        for (uint256 i = 0; i < p.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < p.length; i = unsafeInc(i)) {
             fee += v[i] * subscriptionData.priceData(p[i]);
         }
         uint256 discount = fee - _calculateDiscount(u, fee);
@@ -131,7 +131,7 @@ contract SubscriptionPayments is Ownable {
         uint256[] memory discountPercents = subscriptionData.discountPercents();
         uint256 length = discountSlabs.length;
         uint256 percent = 0;
-        for (uint256 i = 0; i < length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < length; i = unsafeInc(i)) {
             if (stake >= discountSlabs[i]) {
                 percent = discountPercents[i];
             } else {

@@ -100,7 +100,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             slabAmounts_.length == slabPercents_.length,
             "ArgoSubscriptionData: discount slabs array and discount amount array have different size"
         );
-        for (uint256 i = 0; i < _params.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
             uint256 price = _prices[i];
             priceData[name] = price;
@@ -110,7 +110,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         }
         stakedToken = IERC20(s);
         escrow = e;
-        for (uint256 i = 0; i < slabAmounts_.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -120,7 +120,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
         usdPricePrecision = 18;
     }
     // unchecked iterator increment for gas optimization
-    function unsafe_inc(uint x) private pure returns (uint) {
+    function unsafeInc(uint x) private pure returns (uint) {
         unchecked { return x + 1;}
     }
 
@@ -137,7 +137,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             _params.length == _prices.length,
             "Subscription Data: unequal length of array"
         );
-        for (uint256 i = 0; i < _params.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
             uint256 price = _prices[i];
             priceData[name] = price;
@@ -155,12 +155,12 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      */
     function deleteParams(string[] memory _params) external onlyManager {
         require(_params.length != 0, "Subscription Data: empty array");
-        for (uint256 i = 0; i < _params.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
             priceData[name] = 0;
             if (!availableParams[name]) {
                 availableParams[name] = false;
-                for (uint256 j = 0; j < params.length; j = unsafe_inc(j)) {
+                for (uint256 j = 0; j < params.length; j = unsafeInc(j)) {
                     if (
                         keccak256(abi.encodePacked(params[j])) ==
                         keccak256(abi.encodePacked(name))
@@ -187,7 +187,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      */
     function slabs() external view returns(uint256[] memory) {
         uint256[] memory _slabs  = new uint256[](discountSlabs.length);
-        for(uint256 i = 0 ; i< discountSlabs.length; i = unsafe_inc(i)){
+        for(uint256 i = 0 ; i< discountSlabs.length; i = unsafeInc(i)){
             _slabs[i] = discountSlabs[i].amount;
         }
         return _slabs;
@@ -197,7 +197,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
      */
     function discountPercents() external view returns(uint256[] memory) {
         uint256[] memory _percent  = new uint256[](discountSlabs.length);
-        for(uint256 i = 0 ; i< discountSlabs.length; i = unsafe_inc(i)){
+        for(uint256 i = 0 ; i< discountSlabs.length; i = unsafeInc(i)){
             _percent[i] = discountSlabs[i].percent;
         }
         return _percent;
@@ -217,7 +217,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             "ArgoSubscriptionData: discount slabs array and discount amount array have different size"
         );
         delete discountSlabs;
-        for (uint256 i = 0; i < slabAmounts_.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -285,7 +285,7 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
             "ArgoSubscriptionData: token price feed precision and token decimal array length do not match"
         );
 
-        for (uint256 i = 0; i < s.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < s.length; i = unsafeInc(i)) {
             if (!acceptedTokens[t[i]].accepted) {
                 Token memory token = Token(
                     s[i],
@@ -318,10 +318,10 @@ contract SubscriptionData is GovernanceOwnable, Pausable {
     function removeTokens(address[] memory t) external onlyGovernanceAddress {
         require(t.length > 0, "ArgoSubscriptionData: array length cannot be zero");
 
-        for (uint256 i = 0; i < t.length; i = unsafe_inc(i)) {
+        for (uint256 i = 0; i < t.length; i = unsafeInc(i)) {
             if (acceptedTokens[t[i]].accepted) {
                 require(tokens.length > 1, "Cannot remove all payment tokens");
-                for (uint256 j = 0; j < tokens.length; j = unsafe_inc(j)) {
+                for (uint256 j = 0; j < tokens.length; j = unsafeInc(j)) {
                     if (tokens[j] == t[i]) {
                         tokens[j] = tokens[tokens.length - 1];
                         tokens.pop();
