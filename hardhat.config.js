@@ -73,12 +73,6 @@ module.exports = {
                 mnemonic: 'company loud estate century olive gun tribe pulse bread play addict amount',
             },
         },
-        matic: {
-            url: `https://rpc-mumbai.maticvigil.com`, // <---- YOUR INFURA ID! (or it won't work)
-            accounts: {
-                mnemonic: process.env.MNEMONIC,
-            },
-        },
 
     },
 
