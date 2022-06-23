@@ -32,7 +32,7 @@ module.exports = {
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
-        apiKey: "EEGAHTH42UJXXTB3X1T5J5U7W8IGPUVSHB"
+        apiKey: "23QM9S4UX7AXRGNCI7PM74GC13AEP3HPQT"
     },
     networks: {
 
@@ -72,6 +72,10 @@ module.exports = {
             accounts: {
                 mnemonic: 'company loud estate century olive gun tribe pulse bread play addict amount',
             },
+        },
+        arbitrum: {
+            url: 'https://rinkeby.arbitrum.io/rpc',
+            accounts: [process.env.ARBI_PRIVATE_KEY],
         },
 
     },

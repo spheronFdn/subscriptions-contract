@@ -13,9 +13,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
     struct UserData {
         uint256 deposit;
         uint256 balance;
-        string token;
         uint[] charges;
-        
     }
     mapping(address => mapping(address => UserData)) public userData;
     bool public pauseDeposit;
@@ -27,6 +25,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
 
     mapping(address => uint256) public totalDeposit;
     mapping(address => uint256) public totalCharges;
+    mapping(address => uint256) public totalWithdraws;
     mapping(address => uint256) public companyFund;
 
     event UserCharged(address indexed user, uint256 indexed fee);
@@ -125,7 +124,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         );
         require(
             _amount > 0,
-            "SpheronSubscriptionPayments: Balance must be greater than zero"
+            "SpheronSubscriptionPayments: Amount must be greater than zero"
         );
         require(
             _amount <= userData[msg.sender][_token].balance,
@@ -137,6 +136,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             "SpheronPayments: Insufficient allowance"
         );
         userData[msg.sender][_token].balance -= _amount;
+        totalWithdraws[_token] += _amount;
         erc20.transferFrom(treasury, msg.sender, _amount);
         emit UserWithdraw(msg.sender, _token, _amount); 
     }
@@ -319,6 +319,12 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
      */
     function getTotalDeposit(address t) public view returns (uint256) {
         return totalDeposit[t];
+    }
+    /**
+     * @notice Return total withdrawals of all users for a token
+     */
+    function getTotalWithdraws(address t) public view returns (uint256) {
+        return totalWithdraws[t];
     }
     /**
      * @notice Return total charges of all users for a token
