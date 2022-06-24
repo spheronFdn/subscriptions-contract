@@ -16,7 +16,10 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         uint[] charges;
     }
     mapping(address => mapping(address => UserData)) public userData;
+    // to temporarily pause the deposit and withdrawal function
     bool public pauseDeposit;
+    bool public pauseWithdrawal;
+
     ISubscriptionData public subscriptionData;
 
     //For improved precision
@@ -26,12 +29,12 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
     mapping(address => uint256) public totalDeposit;
     mapping(address => uint256) public totalCharges;
     mapping(address => uint256) public totalWithdraws;
-    mapping(address => uint256) public companyFund;
+    mapping(address => uint256) public companyRevenue;
 
-    event UserCharged(address indexed user, uint256 indexed fee);
-    event UserDeposit(address indexed user, address indexed token, uint256 indexed deposit);
-    event UserWithdraw(address indexed user, address indexed token, uint256 indexed balance);
-    event CompanyWithdraw(address indexed token, uint256 indexed balance);
+    event UserCharged(address indexed user, address indexed token, uint256 fee);
+    event UserDeposit(address indexed user, address indexed token, uint256 deposit);
+    event UserWithdraw(address indexed user, address indexed token, uint256 amount);
+    event CompanyWithdraw(address indexed token, uint256 amount);
 
     constructor(address _treasury, address _company, address _data) {
         require(
@@ -118,6 +121,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
      * @param _amount amount of tokens to be withdrawn from treasury
      */
     function userWithdraw(address _token, uint _amount) public nonReentrant {
+        require(!pauseWithdrawal, "Withdrawal is paused");
         require(
             subscriptionData.isAcceptedToken(_token),
             "SpheronSubscriptionPayments: Token not accepted"
@@ -160,7 +164,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             "SpheronPayments: Amount must be greater than zero"
         );
         require(
-            _amount <= companyFund[_token],
+            _amount <= companyRevenue[_token],
             "SpheronSubscriptionPayments: Balance must be less than or equal to user balance"
         );
         IERC20 erc20 = IERC20(_token);
@@ -168,7 +172,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             erc20.allowance(treasury, address(this)) >= _amount,
             "SpheronPayments: Insufficient allowance"
         );
-        companyFund[_token] -= _amount;
+        companyRevenue[_token] -= _amount;
         erc20.transferFrom(treasury, company, _amount);
         emit UserWithdraw(msg.sender, _token, _amount); 
     }
@@ -209,8 +213,8 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         userData[u][t].balance -= underlying;
         userData[u][t].charges.push(underlying);
         totalCharges[t] += underlying;
-        companyFund[t] += underlying;
-        emit UserCharged(u, underlying);
+        companyRevenue[t] += underlying;
+        emit UserCharged(u, t, underlying);
     }
 
     /**
