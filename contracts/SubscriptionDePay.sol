@@ -278,15 +278,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         internal
         returns (uint256)
     {
-        (
-            string memory symbol,
-            uint128 decimals,
-            address tokenAddress,
-            bool accepted,
-            bool isChainLinkFeed,
-            address priceFeedAddress,
-            uint128 priceFeedPrecision
-        ) = subscriptionData.acceptedTokens(t);
+        (, uint128 decimals, , , , , ) = subscriptionData.acceptedTokens(t);
         uint256 precision = 10**decimals;
         a = _toPrecision(a, subscriptionData.usdPricePrecision(), decimals);
         uint256 underlyingPrice = subscriptionData.getUnderlyingPrice(t);
