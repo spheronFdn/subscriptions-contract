@@ -4,9 +4,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISubscriptionData.sol";
 import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract SubscriptionDePay is Ownable, ReentrancyGuard {
+
+    using SafeERC20 for IERC20;
     address private treasury;
     address private company;
 
@@ -109,7 +112,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             erc20.allowance(msg.sender, address(this)) >= _amount,
             "SpheronPayments: Insufficient allowance"
         );
-        erc20.transferFrom(msg.sender, treasury, _amount);
+        erc20.safeTransferFrom(msg.sender, treasury, _amount);
         totalDeposit[_token] += _amount;
         userData[msg.sender][_token].deposit += _amount;
         userData[msg.sender][_token].balance += _amount;
@@ -141,7 +144,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         );
         userData[msg.sender][_token].balance -= _amount;
         totalWithdraws[_token] += _amount;
-        erc20.transferFrom(treasury, msg.sender, _amount);
+        erc20.safeTransferFrom(treasury, msg.sender, _amount);
         emit UserWithdraw(msg.sender, _token, _amount); 
     }
 
@@ -173,7 +176,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             "SpheronPayments: Insufficient allowance"
         );
         companyRevenue[_token] -= _amount;
-        erc20.transferFrom(treasury, company, _amount);
+        erc20.safeTransferFrom(treasury, company, _amount);
         emit UserWithdraw(msg.sender, _token, _amount); 
     }
 
