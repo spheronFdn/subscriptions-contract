@@ -38,7 +38,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     let tokenAddresses;
     beforeEach(async() => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
-        [first, second, third, vault, treasury, company] = await ethers.getSigners();
+        [first, second, third, vault, treasury, trustForwarded, company] = await ethers.getSigners();
         Token = await ethers.getContractFactory("ARGO")
         token1 = await Token.deploy(tokenAmount)
         await token1.deployed();
@@ -54,7 +54,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         subscriptionData = await SubscriptionData.deploy(params, prices, third.address, discountSlabs, discountPercents, token1.address);
         await subscriptionData.deployed()
         SubscriptionDePay = await ethers.getContractFactory("SubscriptionDePay");
-        subscriptionDePay = await SubscriptionDePay.deploy(treasury.address, company.address, subscriptionData.address);
+        subscriptionDePay = await SubscriptionDePay.deploy(treasury.address, company.address, subscriptionData.address, trustForwarded.address);
         await subscriptionDePay.deployed()
         await subscriptionData.setGovernanceAddress(third.address);
         await subscriptionData.connect(third).addNewTokens(priceFeedSymbols, tokenAddresses, tokenDecimals, isChainlink, feedAddress, feedPrecision);

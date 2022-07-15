@@ -22,17 +22,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
     solidity: {
         version: "0.8.4",
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 1000,
-            },
-        },
     },
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
-        apiKey: "23QM9S4UX7AXRGNCI7PM74GC13AEP3HPQT"
+        apiKey: "CCZ9FSNT1PRX74XPHHY6HVBWVZJKFFZ3RE"
     },
     networks: {
 
@@ -76,6 +70,10 @@ module.exports = {
         arbitrum: {
             url: 'https://rinkeby.arbitrum.io/rpc',
             accounts: [process.env.ARBI_PRIVATE_KEY],
+        },
+        mumbai: {
+            url: 'https://rpc-mumbai.maticvigil.com/',
+            accounts: [process.env.MUMBAI_PRIVATE_KEY],
         },
 
     },

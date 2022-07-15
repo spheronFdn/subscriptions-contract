@@ -6,8 +6,9 @@ import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract SubscriptionDePay is Ownable, ReentrancyGuard {
+contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
     using SafeERC20 for IERC20;
     address private treasury;
@@ -19,6 +20,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         uint[] charges;
     }
     mapping(address => mapping(address => UserData)) public userData;
+    
     // to temporarily pause the deposit and withdrawal function
     bool public pauseDeposit;
     bool public pauseWithdrawal;
@@ -39,7 +41,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
     event UserWithdraw(address indexed user, address indexed token, uint256 amount);
     event CompanyWithdraw(address indexed token, uint256 amount);
 
-    constructor(address _treasury, address _company, address _data) {
+    constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder) {
         require(
             _treasury != address(0),
             "SpheronSubscriptionPayments: Invalid address for treasury"
@@ -62,10 +64,10 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
      *
      */
     modifier onlyManager() {
-        bool isManager = subscriptionData.managerByAddress(msg.sender);
+        bool isManager = subscriptionData.managerByAddress(_msgSender());
         address owner = owner();
         require(
-            isManager || msg.sender == owner,
+            isManager || _msgSender() == owner,
             "Only manager and owner can call this function"
         );
         _;
@@ -109,21 +111,21 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         );
         IERC20 erc20 = IERC20(_token);
         require(
-            erc20.allowance(msg.sender, address(this)) >= _amount,
+            erc20.allowance(_msgSender(), address(this)) >= _amount,
             "SpheronPayments: Insufficient allowance"
         );
-        erc20.safeTransferFrom(msg.sender, treasury, _amount);
+        erc20.safeTransferFrom(_msgSender(), treasury, _amount);
         totalDeposit[_token] += _amount;
-        userData[msg.sender][_token].deposit += _amount;
-        userData[msg.sender][_token].balance += _amount;
-        emit UserDeposit(msg.sender, _token, _amount); 
+        userData[_msgSender()][_token].deposit += _amount;
+        userData[_msgSender()][_token].balance += _amount;
+        emit UserDeposit(_msgSender(), _token, _amount); 
     }
     /**
      * @notice user token withdrawal one of the accepted erc20 to the treasury
      * @param _token address of erc20 token
      * @param _amount amount of tokens to be withdrawn from treasury
      */
-    function userWithdraw(address _token, uint _amount) public nonReentrant {
+    function userWithdraw(address _token, uint _amount) external nonReentrant {
         require(!pauseWithdrawal, "Withdrawal is paused");
         require(
             subscriptionData.isAcceptedToken(_token),
@@ -134,7 +136,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             "SpheronSubscriptionPayments: Amount must be greater than zero"
         );
         require(
-            _amount <= userData[msg.sender][_token].balance,
+            _amount <= userData[_msgSender()][_token].balance,
             "SpheronSubscriptionPayments: Amount must be less than or equal to user balance"
         );
         IERC20 erc20 = IERC20(_token);
@@ -142,10 +144,10 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
             erc20.allowance(treasury, address(this)) >= _amount,
             "SpheronPayments: Insufficient allowance"
         );
-        userData[msg.sender][_token].balance -= _amount;
+        userData[_msgSender()][_token].balance -= _amount;
         totalWithdraws[_token] += _amount;
-        erc20.safeTransferFrom(treasury, msg.sender, _amount);
-        emit UserWithdraw(msg.sender, _token, _amount); 
+        erc20.safeTransferFrom(treasury, _msgSender(), _amount);
+        emit UserWithdraw(_msgSender(), _token, _amount); 
     }
 
     /**
@@ -155,7 +157,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
      */
     function companyWithdraw(address _token, uint _amount) public nonReentrant {
         require(
-            msg.sender == company,
+            _msgSender() == company,
             "Only callable by company"
         );
         require(
@@ -177,7 +179,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
         );
         companyRevenue[_token] -= _amount;
         erc20.safeTransferFrom(treasury, company, _amount);
-        emit UserWithdraw(msg.sender, _token, _amount); 
+        emit UserWithdraw(_msgSender(), _token, _amount); 
     }
 
     /**
@@ -330,6 +332,17 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard {
      */
     function getTotalCharges(address t) public view returns (uint256) {
         return totalCharges[t];
+    }
+    function _msgSender() internal view override(Context, ERC2771Context)
+      returns (address sender) {
+      sender = ERC2771Context._msgSender();
+    }
+    function _msgData() internal view override(Context, ERC2771Context)
+      returns (bytes calldata) {
+      return ERC2771Context._msgData();
+    }
+    function setTrustedForwarder(address _forwarder) public override onlyManager {
+        ERC2771Context.setTrustedForwarder(_forwarder);
     }
 
 }
