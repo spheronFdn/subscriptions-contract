@@ -21,8 +21,8 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
     solidity: {
-        version: "0.8.13",
-    },
+        version: "0.8.16",
+    }, 
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/

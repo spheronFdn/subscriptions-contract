@@ -107,7 +107,10 @@ contract SubscriptionPayments is Ownable {
         ) = subscriptionData.acceptedTokens(t);
         uint256 precision = 10**decimals;
         a = _toPrecision(a, subscriptionData.usdPricePrecision(), decimals);
-        uint256 underlyingPrice = subscriptionData.getUnderlyingPrice(t);
+        (
+            uint256 underlyingPrice,
+            uint256 timestamp
+        ) = subscriptionData.getUnderlyingPrice(t);
         return (a * precision) / underlyingPrice;
     }
 

@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import "./Context.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
  * @dev Context variant with ERC2771 support.
  */
-abstract contract ERC2771Contextt is Context {
+abstract contract ERC2771Context is Context {
     address private _trustedForwarder;
 
     constructor(address trustedForwarder) {

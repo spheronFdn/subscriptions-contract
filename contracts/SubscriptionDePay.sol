@@ -6,7 +6,7 @@ import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "contracts/utils/ERC2771Context.sol";
+import "./utils/ERC2771Context.sol";
 
 contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
@@ -25,7 +25,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         bool subscribed;
     }
 
-    mapping(address => mapping(address => UserSub)) public userSub;    
+    mapping(address => UserSub) public userSub;    
 
     // (user => (token => UserData))
     mapping(address => mapping(address => UserData)) public userData;
@@ -49,11 +49,11 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     event UserDeposit(address indexed user, address indexed token, uint256 deposit);
     event UserWithdraw(address indexed user, address indexed token, uint256 amount);
     event CompanyWithdraw(address indexed token, uint256 amount);
-    event setTreasury(address indexed _treasury);
-    event setCompany(address indexed _company);
-    event DataContractUpdate(address indexed _dataContract);
+    event TreasurySet(address indexed _treasury);
+    event CompanySet(address indexed _company);
+    event DataContractUpdated(address indexed _dataContract);
     event DepositStatusChanged(bool _status);
-
+    event UserSubscribed(address indexed user, string[] params, uint256[] values);
     constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder) {
         require(
             _treasury != address(0),
@@ -90,6 +90,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      *
      */
     modifier onlyCompany() {
+        address owner = owner();
         require(
             _msgSender() == company || _msgSender() == owner,
             "Only company and owner can call this function"
@@ -113,7 +114,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             "SpheronSubscriptionPayments: Invalid address for treasury"
         );
         treasury = _treasury;
-        emit setTreasury(treasury);
+        emit TreasurySet(treasury);
     }
     /**
      * @notice set address of the company
@@ -127,8 +128,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         pendingCompany = _company;
     }
     /**
-     * @notice set address of the company
-     * @param _company company address
+     * @notice approve pending company address
      */
     function approveSetCompany() external onlyOwnerOrManager {
         require(
@@ -136,7 +136,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             "SpheronSubscriptionPayments: Invalid address for company"
         );
         company = pendingCompany;
-        emit setCompany(company);
+        emit CompanySet(company);
     }
     /**
      * @notice deposit one of the accepted erc20 to the treasury
@@ -224,10 +224,10 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
     /**
      * @notice charge user for one time charges
-     * @param u user address
-     * @param p parameters list for subscription payment
-     * @param v value list for subscription payment
-     * @param t address of token contract
+     * @param _user user address
+     * @param _parameters list for subscription payment
+     * @param _values value list for subscription payment
+     * @param _token address of token contract
      */
     function chargeUser(
         address _user,
@@ -255,7 +255,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         uint256 fee = 0;
 
         for (uint256 i = 0; i < _parameters.length; i = unsafeInc(i)) {
-            fee += v[i] * subscriptionData.priceData(_parameters[i]);
+            fee += _values[i] * subscriptionData.priceData(_parameters[i]);
         }
         uint256 discountedFee = fee - _calculateDiscount(_user, fee);
         uint256 underlying = _calculatePriceInToken(discountedFee, _token);
@@ -264,87 +264,70 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             "SpheronSubscriptionPayments: Balance must be less than or equal to amount charged"
         );
         userData[_user][_token].balance -= underlying;
-        userData[_user][_token].charges.push(underlying);
         totalCharges[_token] += underlying;
         companyRevenue[_token] += underlying;
         emit UserCharged(_user, _token, underlying);
     }
 
-    function userUpdateSub(
-        address u,
-        string[] memory p,
-        uint256[] memory v,
-        address t) {
-        require(userSub);
-        require(!userSub[u][t].subscribed, "Already subscribed");
+    /**
+     * @notice charge user for one time charges
+     * @param _params parameters for subscription
+     * @param _values list for subscription
+     */
+    function setUserSub(
+        string[] memory _params,
+        uint256[] memory _values) external {
+        require(_params.length > 0, "SpheronSubscriptionPayments: No params");
         require(
-            p.length == v.length,
+            _params.length == _values.length,
             "SpheronSubscriptionPayments: unequal length of array"
         );
-        require(
-            subscriptionData.isAcceptedToken(t),
-            "ArgoSubscriptionPayments: Token not accepted"
-        );
-        userSub[u][t].parameters = p;
-        userSub[u][t].values = v;
-        userSub[u][t].subscribed = true;
-
-    }
-
-    function userSubscribe(
-        address u,
-        string[] memory p,
-        uint256[] memory v,
-        address t) {
-        require(userSub[u][t].subscribed, "Not subscribed");
-        require(
-            p.length == v.length,
-            "SpheronSubscriptionPayments: unequal length of array"
-        );
-        require(
-            subscriptionData.isAcceptedToken(t),
-            "ArgoSubscriptionPayments: Token not accepted"
-        );
-        userSub[u][t].parameters = p;
-        userSub[u][t].values = v;
-        userSub[u][t].subscribed = true;
+        for(uint256 i = 0; i < _values.length; i = unsafeInc(i)) {
+            require(_values[i] > 0, "SpheronSubscriptionPayments: Invalid value");
+        }
+        userSub[_msgSender()].params = _params;
+        userSub[_msgSender()].values = _values;
+        userSub[_msgSender()].subscribed = true;
+        emit UserSubscribed(_msgSender(), _params, _values);
     }
 
     /**
      * @notice charge user for subscription
-     * @param u user address
-     * @param p parameters list for subscription payment
-     * @param v value list for subscription payment
-     * @param t address of token contract
+     * @param _user user address
+     * @param _token address of token contract
      */
     function chargeUserSub(
-        address u,
-        address t
+        address _user,
+        address _token
     ) external onlyOwnerOrManager {
+
+        require(
+            userSub[_user].subscribed, 
+            "SpheronSubscriptionPayments: User not subscribed"
+        );
         
         require(
-            subscriptionData.isAcceptedToken(t),
+            subscriptionData.isAcceptedToken(_token),
             "SpheronSubscriptionPayments: Token not accepted"
         );
-        string[] p = userSub[u][t].parameters;
-        uint256[] v = userSub[u][t].values;
+        string[] memory p = userSub[_user].params;
+        uint256[] memory v = userSub[_user].values;
         uint256 fee = 0;
 
 
         for (uint256 i = 0; i < p.length; i = unsafeInc(i)) {
             fee += v[i] * subscriptionData.priceData(p[i]);
         }
-        uint256 discountedFee = fee - _calculateDiscount(u, fee);
-        uint256 underlying = _calculatePriceInToken(discountedFee, t);
+        uint256 discountedFee = fee - _calculateDiscount(_user, fee);
+        uint256 underlying = _calculatePriceInToken(discountedFee, _token);
         require(
-            underlying <= userData[u][t].balance,
+            underlying <= userData[_user][_token].balance,
             "SpheronSubscriptionPayments: Balance must be less than or equal to amount charged"
         );
-        userData[u][t].balance -= underlying;
-        userData[u][t].charges.push(underlying);
-        totalCharges[t] += underlying;
-        companyRevenue[t] += underlying;
-        emit UserCharged(u, t, underlying);
+        userData[_user][_token].balance -= underlying;
+        totalCharges[_token] += underlying;
+        companyRevenue[_token] += underlying;
+        emit UserCharged(_user, _token, underlying);
     }
 
     /**
@@ -407,7 +390,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     /**
      * @dev calculate price in Spheron
      * @param a total amount in USD
-     * @return t token address
+     * @return price
      */
     function _calculatePriceInToken(uint256 a, address t)
         internal
@@ -416,7 +399,10 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         (, uint128 decimals, , , , , ) = subscriptionData.acceptedTokens(t);
         uint256 precision = 10**decimals;
         a = _toPrecision(a, subscriptionData.usdPricePrecision(), decimals);
-        (uint256 underlyingPrice, uint timestamp) = subscriptionData.getUnderlyingPrice(t);
+        (
+            uint256 underlyingPrice,
+            uint256 timestamp
+        ) = subscriptionData.getUnderlyingPrice(t);
         require(timestamp == block.timestamp, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }

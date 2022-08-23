@@ -422,9 +422,10 @@ contract SubscriptionData is GovernanceOwnable {
    /**
      * @notice get price of underlying token
      * @param t underlying token address
-     * @return price of underlying token in usd
+     * @return underlyingPrice of underlying token in usd
+     * @return timestamp of underlying token in usd
      */
-    function getUnderlyingPrice(address t) public view returns (uint256, uint256) {
+    function getUnderlyingPrice(address t) public view returns (uint256 underlyingPrice, uint256 timestamp) {
         Token memory acceptedToken = acceptedTokens[t];
         require(acceptedToken.accepted, "Token is not accepted");
         uint256 _price;
