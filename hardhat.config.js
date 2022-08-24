@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-etherscan");
-
+require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
 const dotenv = require("dotenv");
 dotenv.config();

@@ -94,7 +94,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         }
         fee = fee.div(BigNumber.from(10).pow(12));
         let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(await subscriptionData.getUnderlyingPrice(token2.address))
-        expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying);
+        expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying.underlyingPrice);
     });
     it("Should enable user withdraw balance", async function() {
         await token2.connect(second).approve(subscriptionDePay.address, amount4);
@@ -139,7 +139,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         fee = fee.mul(underlying).div(BigNumber.from(10).pow(18)) 
         await token1.connect(second).approve(subscriptionDePay.address, fee)
         let tx = subscriptionDePay.connect(first).chargeUser(second.address, _params, _values, token1.address);
-        await expect(tx).to.be.revertedWith("SpheronSubscriptionPayments: Token not accepted");
+        await expect(tx).to.be.revertedWith("Token is not accepted");
     });
 
 })

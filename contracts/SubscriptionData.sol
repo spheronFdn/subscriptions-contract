@@ -99,7 +99,7 @@ contract SubscriptionData is GovernanceOwnable {
             "ArgoSubscriptionData: Escrow address can not be zero address"
         );
         require(
-            _escrow != address(0),
+            _stakedToken != address(0),
             "ArgoSubscriptionData: staked token address can not be zero address"
         );
         require(
@@ -340,7 +340,7 @@ contract SubscriptionData is GovernanceOwnable {
             require(_tokens[i] != address(0), "ArgoSubscriptionData: token address can not be zero address");
             require(_decimals[i] > 0, "ArgoSubscriptionData: token decimal can not be zero");
             bytes memory tempEmptyStringTest = bytes(_symbols[i]);
-            require(tempEmptyStringTest.length == 0, "ArgoSubscriptionData: token symbol can not be empty");
+            require(tempEmptyStringTest.length != 0, "ArgoSubscriptionData: token symbol can not be empty");
             Token memory token = Token(
                 _symbols[i],
                 _decimals[i],

@@ -1,7 +1,7 @@
 const { BigNumber } = require("@ethersproject/bignumber");
 const { expect, assert } = require("chai");
 
-describe("ArGo Subscription Data test cases", function () {
+describe.skip("ArGo Subscription Data test cases", function () {
     const amount = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount2 = ethers.BigNumber.from("110").mul(ethers.BigNumber.from(10).pow(18))
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))
@@ -38,9 +38,14 @@ describe("ArGo Subscription Data test cases", function () {
         await token1.deployed();
         token2 = await Token.deploy(tokenAmount)
         await token2.deployed();
+        token3 = await Token.deploy(tokenAmount)
+        await token3.deployed();
+        token4 = await Token.deploy(tokenAmount)
+        await token4.deployed();
         token1.transfer(second.address, tokenAmount)
         token2.transfer(second.address, tokenAmount)
         tokenAddresses = [token1.address, token2.address];
+        newtokenAddresses = [token3.address, token4.address];
         SubscriptionData = await ethers.getContractFactory("SubscriptionData");
         Staking = await ethers.getContractFactory("StakingMock");
         staking = await Staking.connect(first).deploy(epoch1Start, epochDuration, vault.address);
@@ -148,17 +153,17 @@ describe("ArGo Subscription Data test cases", function () {
         var bal1 = await token1.balanceOf(first.address);
         expect(approvalAmount).to.equal(bal1.sub(bal))
     });
-    it("Should pause", async function () {
-        subscriptionData.connect(first).pause();
-    });
-    it("Should unpause charging", async function () {
-        subscriptionData.connect(first).pause();
-        subscriptionData.connect(first).unpause();
+    // it("Should pause", async function () {
+    //     subscriptionData.connect(first).pause();
+    // });
+    // it("Should unpause charging", async function () {
+    //     subscriptionData.connect(first).pause();
+    //     subscriptionData.connect(first).unpause();
 
-    });
+    // });
     it("Should return underlying token price", async function () {
-        const price = await subscriptionData.getUnderlyingPrice(token1.address);
-        expect(price).to.be.equal(argoPriceAtLastBlock);
+        const data = await subscriptionData.getUnderlyingPrice(token1.address);
+        expect(data.underlyingPrice).to.be.equal(argoPriceAtLastBlock);
 
     });
     it("Should change USD price precisions", async function () {
@@ -168,7 +173,7 @@ describe("ArGo Subscription Data test cases", function () {
     });
     it("Should add tokens", async function () {
         await subscriptionData.setGovernanceAddress(third.address);
-        await subscriptionData.connect(third).addNewTokens(priceFeedSymbols, tokenAddresses, tokenDecimals, isChainlink, feedAddress, feedPrecision);
+        await subscriptionData.connect(third).addNewTokens(priceFeedSymbols, newtokenAddresses, tokenDecimals, isChainlink, feedAddress, feedPrecision);
     });
 
     it("Should not charge users after removing token", async function () {

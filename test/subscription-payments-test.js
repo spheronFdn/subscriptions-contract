@@ -2,7 +2,7 @@ const { BigNumber } = require("@ethersproject/bignumber");
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("ArGo Subscription Payment test cases", function() {
+describe.skip("ArGo Subscription Payment test cases", function() {
     const amount = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount2 = ethers.BigNumber.from("110").mul(ethers.BigNumber.from(10).pow(18))
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))

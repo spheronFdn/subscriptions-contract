@@ -389,6 +389,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
     /**
      * @dev calculate price in Spheron
+     * @notice ensure that price is within 6 hour window
      * @param a total amount in USD
      * @return price
      */
@@ -403,7 +404,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             uint256 underlyingPrice,
             uint256 timestamp
         ) = subscriptionData.getUnderlyingPrice(t);
-        require(timestamp == block.timestamp, "SpheronSubscriptionPayments: underlying price not updated");
+        require((block.timestamp - timestamp) <= 21600, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }
 
