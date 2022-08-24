@@ -24,7 +24,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     let priceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd"
     const discountSlabs = [amount, amount2, amount3];
     const discountPercents = [10, 15, 20];
-    const priceFeedSymbol = "ARGO/USD";
+    const priceFeedSymbol = "SPHE/USD";
     const epochDuration = 604800;
     let epoch1Start;
     const PRECISION = BigNumber.from(10).pow(BigNumber.from(25))
@@ -39,7 +39,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     beforeEach(async() => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
         [first, second, third, vault, treasury, trustForwarded, company] = await ethers.getSigners();
-        Token = await ethers.getContractFactory("ARGO")
+        Token = await ethers.getContractFactory("SPHERON")
         token1 = await Token.deploy(tokenAmount)
         await token1.deployed();
         token2 = await Token.deploy(tokenAmount)

@@ -2,7 +2,7 @@ const { BigNumber } = require("@ethersproject/bignumber");
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-describe.skip("ArGo Subscription Payment test cases", function() {
+describe.skip("Spheron Subscription Payment test cases", function() {
     const amount = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount2 = ethers.BigNumber.from("110").mul(ethers.BigNumber.from(10).pow(18))
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))
@@ -22,7 +22,7 @@ describe.skip("ArGo Subscription Payment test cases", function() {
     let priceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd"
     const discountSlabs = [amount, amount2, amount3];
     const discountPercents = [10, 15, 20];
-    const priceFeedSymbol = "ARGO/USD";
+    const priceFeedSymbol = "SPHE/USD";
     const epochDuration = 604800;
     let epoch1Start;
     const PRECISION = BigNumber.from(10).pow(BigNumber.from(25))
@@ -37,7 +37,7 @@ describe.skip("ArGo Subscription Payment test cases", function() {
     beforeEach(async() => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
         [first, second, third, vault] = await ethers.getSigners();
-        Token = await ethers.getContractFactory("ARGO")
+        Token = await ethers.getContractFactory("SPHERON")
         token1 = await Token.deploy(tokenAmount)
         await token1.deployed();
         token2 = await Token.deploy(tokenAmount)
@@ -65,7 +65,7 @@ describe.skip("ArGo Subscription Payment test cases", function() {
     });
     it("Data contract address should not be zero", async function() {
         subscriptionData = SubscriptionPayments.deploy("0x0000000000000000000000000000000000000000");
-        await expect(subscriptionData).to.be.revertedWith("ArgoSubscriptionPayments: SubscriptionData contract address can not be zero address");
+        await expect(subscriptionData).to.be.revertedWith("SubscriptionPayments: SubscriptionData contract address can not be zero address");
     });
     it("Should update data contract address", async function() {
         await subscriptionPayments.updateDataContract(third.address);
@@ -142,7 +142,7 @@ describe.skip("ArGo Subscription Payment test cases", function() {
         fee = fee.mul(underlying).div(BigNumber.from(10).pow(18)) 
         await token1.connect(second).approve(subscriptionPayments.address, fee)
         let tx = subscriptionPayments.connect(first).chargeUser(second.address, _params, _values, token1.address);
-        await expect(tx).to.be.revertedWith("ArgoSubscriptionPayments: Token not accepted");
+        await expect(tx).to.be.revertedWith("SubscriptionPayments: Token not accepted");
     });
 
 })

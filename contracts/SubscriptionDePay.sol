@@ -270,7 +270,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     }
 
     /**
-     * @notice charge user for one time charges
+     * @notice set params for recurring sub by user
      * @param _params parameters for subscription
      * @param _values list for subscription
      */

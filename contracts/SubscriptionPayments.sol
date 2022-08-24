@@ -34,7 +34,7 @@ contract SubscriptionPayments is Ownable {
     constructor(address d) {
         require(
             d != address(0),
-            "ArgoSubscriptionPayments: Invalid address of subscription data contract"
+            "SubscriptionPayments: Invalid address of subscription data contract"
         );
         subscriptionData = ISubscriptionData(d);
     }
@@ -59,11 +59,11 @@ contract SubscriptionPayments is Ownable {
     ) external onlyManager {
         require(
             p.length == v.length,
-            "ArgoSubscriptionPayments: unequal length of array"
+            "SubscriptionPayments: unequal length of array"
         );
         require(
             subscriptionData.isAcceptedToken(t),
-            "ArgoSubscriptionPayments: Token not accepted"
+            "SubscriptionPayments: Token not accepted"
         );
 
         uint256 fee = 0;
@@ -77,18 +77,18 @@ contract SubscriptionPayments is Ownable {
         IERC20 erc20 = IERC20(t);
         require(
             erc20.balanceOf(u) >= underlying,
-            "ArgoPayments: User have insufficient balance"
+            "Payments: User have insufficient balance"
         );
         require(
             erc20.allowance(u, address(this)) >= underlying,
-            "ArgoPayments: Insufficient allowance"
+            "Payments: Insufficient allowance"
         );
         erc20.transferFrom(u, subscriptionData.escrow(), underlying);
         emit UserCharged(u, underlying);
     }
 
     /**
-     * @dev calculate price in ARGO
+     * @dev calculate price in SPHE
      * @param a total amount in USD
      * @return t token address
      */
@@ -151,7 +151,7 @@ contract SubscriptionPayments is Ownable {
     function updateDataContract(address d) external onlyManager {
         require(
             d != address(0),
-            "ArgoSubscriptionPayments: data contract address can not be zero address"
+            "SubscriptionPayments: data contract address can not be zero address"
         );
         subscriptionData = ISubscriptionData(d);
     }
@@ -187,7 +187,7 @@ contract SubscriptionPayments is Ownable {
         IERC20 erc20 = IERC20(t);
         require(
             erc20.balanceOf(address(this)) >= a,
-            "ArgoSubscriptionData: Insufficient token balance in contract"
+            "SubscriptionData: Insufficient token balance in contract"
         );
         erc20.transfer(msg.sender, a);
     }

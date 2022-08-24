@@ -1,7 +1,7 @@
 const { BigNumber } = require("@ethersproject/bignumber");
 const { expect, assert } = require("chai");
 
-describe.skip("ArGo Subscription Data test cases", function () {
+describe.skip("Spheron Subscription Data test cases", function () {
     const amount = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount2 = ethers.BigNumber.from("110").mul(ethers.BigNumber.from(10).pow(18))
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))
@@ -19,7 +19,7 @@ describe.skip("ArGo Subscription Data test cases", function () {
     let priceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd"
     const discountSlabs = [amount, amount2, amount3];
     const discountPercents = [10, 15, 20];
-    const priceFeedSymbol = "ARGO/USD";
+    const priceFeedSymbol = "SPHE/USD";
     const epochDuration = 604800;
     let epoch1Start;
 
@@ -29,11 +29,11 @@ describe.skip("ArGo Subscription Data test cases", function () {
     const feedAddress = ["0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd", "0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0"];
     const feedPrecision = [8, 8]
     let tokenAddresses;
-    const argoPriceAtLastBlock = BigNumber.from("270980320000000000");
+    const sphePriceAtLastBlock = BigNumber.from("270980320000000000");
     beforeEach(async () => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
         [first, second, third, vault] = await ethers.getSigners();
-        Token = await ethers.getContractFactory("ARGO")
+        Token = await ethers.getContractFactory("SPHERON")
         token1 = await Token.deploy(tokenAmount)
         await token1.deployed();
         token2 = await Token.deploy(tokenAmount)
@@ -79,12 +79,12 @@ describe.skip("ArGo Subscription Data test cases", function () {
     });
     it("Escrow address should be non zero should.", async function () {
         subscriptionData = SubscriptionData.deploy(params, prices, "0x0000000000000000000000000000000000000000", discountSlabs, discountPercents, token1.address);
-        await expect(subscriptionData).to.be.revertedWith("ArgoSubscriptionData: Escrow address can not be zero address");
+        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: Escrow address can not be zero address");
     });
     it("Array of discount slab should be equal", async function () {
         let _slabs = [amount, amount2];
         subscriptionData = SubscriptionData.deploy(params, prices, third.address, _slabs, discountPercents, token1.address);
-        await expect(subscriptionData).to.be.revertedWith("ArgoSubscriptionData: discount slabs array and discount amount array have different size");
+        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: discount slabs array and discount amount array have different size");
     });
 
     it("update params", async function () {
@@ -134,7 +134,7 @@ describe.skip("ArGo Subscription Data test cases", function () {
 
     it("staked token address should be non zero.", async function () {
         subscriptionData = SubscriptionData.deploy(params, prices, third.address, discountSlabs, discountPercents, "0x0000000000000000000000000000000000000000");
-        await expect(subscriptionData).to.be.revertedWith("ArgoSubscriptionData: staked token address can not be zero address");
+        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: staked token address can not be zero address");
     });
     it("Should enable discounts", async function () {
         await subscriptionData.enableDiscounts(staking.address);
@@ -163,7 +163,7 @@ describe.skip("ArGo Subscription Data test cases", function () {
     // });
     it("Should return underlying token price", async function () {
         const data = await subscriptionData.getUnderlyingPrice(token1.address);
-        expect(data.underlyingPrice).to.be.equal(argoPriceAtLastBlock);
+        expect(data.underlyingPrice).to.be.equal(sphePriceAtLastBlock);
 
     });
     it("Should change USD price precisions", async function () {

@@ -17,7 +17,7 @@ const hre = require("hardhat");
 // );
 const discountSlabs = [];
 const discountPercents = [];
-const argoTestToken = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
+const spheTestToken = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // const usdcTest = "0xE163A5689Dc303f5A7AFdbbb050432Fb5a8E7174";
 const escrow = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // let argoPriceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd";
@@ -58,7 +58,7 @@ const prices = [
 // const priceFeedSymbols = [argoFeedSymbol, usdcFeedSymbol];
 // const isChainlink = [false, true];
 // const tokenDecimals = [18, 6];
-// const tokenAddresses = [argoTestToken, usdcTest];
+// const tokenAddresses = [spheTestToken, usdcTest];
 const priceFeedSymbols = ["WETH/USD", "WMATIC/USD", "USDT/USD", "DAI/USD"];
 const tokenName = ["WETH", "WMATIC", "USDT", "DAI"];
 const tokenAddresses = [
@@ -93,7 +93,7 @@ async function main() {
     escrow,
     discountSlabs,
     discountPercents,
-    argoTestToken,
+    spheTestToken,
   ];
   //   const data = await Data.deploy(...constructorArgs);
   //   await data.deployed();

@@ -92,31 +92,31 @@ contract SubscriptionData is GovernanceOwnable {
     ) {
         require(
             _params.length == _prices.length,
-            "ArgoSubscriptionData: unequal length of array"
+            "SubscriptionData: unequal length of array"
         );
         require(
             _escrow != address(0),
-            "ArgoSubscriptionData: Escrow address can not be zero address"
+            "SubscriptionData: Escrow address can not be zero address"
         );
         require(
             _stakedToken != address(0),
-            "ArgoSubscriptionData: staked token address can not be zero address"
+            "SubscriptionData: staked token address can not be zero address"
         );
         require(
             slabAmounts_.length == slabPercents_.length,
-            "ArgoSubscriptionData: discount slabs array and discount amount array have different size"
+            "SubscriptionData: discount slabs array and discount amount array have different size"
         );
-        require(_params.length > 0, "ArgoSubscriptionData: No parameters provided");
-        require(_prices.length > 0, "ArgoSubscriptionData: No prices provided");
+        require(_params.length > 0, "SubscriptionData: No parameters provided");
+        require(_prices.length > 0, "SubscriptionData: No prices provided");
         require(
             slabAmounts_.length > 0 && slabAmounts_.length <= 10, 
-            "ArgoSubscriptionData: discount slabs out of range");
+            "SubscriptionData: discount slabs out of range");
         require(
             slabPercents_.length > 0 && slabPercents_.length <=10, 
-            "ArgoSubscriptionData: discount percents out of range");
+            "SubscriptionData: discount percents out of range");
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
-            require(!availableParams[_params[i]], "ArgoSubscriptionData: Parameter already exists");
-            require(_prices[i] > 0, "ArgoSubscriptionData: Price of parameter can not be zero");
+            require(!availableParams[_params[i]], "SubscriptionData: Parameter already exists");
+            require(_prices[i] > 0, "SubscriptionData: Price of parameter can not be zero");
             string memory name = _params[i];
             uint256 price = _prices[i];
             priceData[name] = price;
@@ -126,11 +126,11 @@ contract SubscriptionData is GovernanceOwnable {
         }
         stakedToken = IERC20(_stakedToken);
         escrow = _escrow;
-        require(isIncremental(slabAmounts_), "ArgoSubscriptionData: discount slabs array is not incremental");
-        require(isIncremental(slabPercents_), "ArgoSubscriptionData: discount percent array is not incremental");
+        require(isIncremental(slabAmounts_), "SubscriptionData: discount slabs array is not incremental");
+        require(isIncremental(slabPercents_), "SubscriptionData: discount percent array is not incremental");
         for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
-            require(slabAmounts_[i] > 0, "ArgoSubscriptionData: discount slab amount can not be zero");
-            require(slabPercents_[i] > 0, "ArgoSubscriptionData: discount slab percent can not be zero");
+            require(slabAmounts_[i] > 0, "SubscriptionData: discount slab amount can not be zero");
+            require(slabPercents_[i] > 0, "SubscriptionData: discount slab percent can not be zero");
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -250,20 +250,20 @@ contract SubscriptionData is GovernanceOwnable {
     ) public onlyGovernanceAddress {
         require(
             slabAmounts_.length == slabPercents_.length,
-            "ArgoSubscriptionData: discount slabs array and discount amount array have different size"
+            "SubscriptionData: discount slabs array and discount amount array have different size"
         );
         require(
-            slabAmounts_.length > 0 && slabAmounts_.length <= (10 - slabAmounts_.length),
-             "ArgoSubscriptionData: discount slabs out of range");
+            slabAmounts_.length > 0 && slabAmounts_.length <= (10 - discountSlabs.length),
+             "SubscriptionData: discount slabs out of range");
         require(
-            slabPercents_.length > 0 && slabPercents_.length <= (10 - slabPercents_.length),
-             "ArgoSubscriptionData: discount percents out of range");
+            slabPercents_.length > 0 && slabPercents_.length <= (10 - discountSlabs.length),
+             "SubscriptionData: discount percents out of range");
         delete discountSlabs;
-        require(isIncremental(slabAmounts_), "ArgoSubscriptionData: discount slabs array is not incremental");
-        require(isIncremental(slabPercents_), "ArgoSubscriptionData: discount percent array is not incremental");
+        require(isIncremental(slabAmounts_), "SubscriptionData: discount slabs array is not incremental");
+        require(isIncremental(slabPercents_), "SubscriptionData: discount percent array is not incremental");
         for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
-            require(slabAmounts_[i] > 0, "ArgoSubscriptionData: discount slab amount can not be zero");
-            require(slabPercents_[i] > 0, "ArgoSubscriptionData: discount slab percent can not be zero");
+            require(slabAmounts_[i] > 0, "SubscriptionData: discount slab amount can not be zero");
+            require(slabPercents_[i] > 0, "SubscriptionData: discount slab percent can not be zero");
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -280,7 +280,7 @@ contract SubscriptionData is GovernanceOwnable {
     function enableDiscounts(address s) external onlyManager {
         require(
             s != address(0),
-            "ArgoSubscriptionData: staking manager address can not be zero address"
+            "SubscriptionData: staking manager address can not be zero address"
         );
         discountsEnabled = true;
         stakingManager = IStaking(s);
@@ -304,43 +304,43 @@ contract SubscriptionData is GovernanceOwnable {
         address[] memory priceFeedAddress_,
         uint128[] memory priceFeedPrecision_
     ) external onlyGovernanceAddress {
-        require(_symbols.length > 0, "ArgoSubscriptionData: No symbol provided");
-        require(_tokens.length > 0, "ArgoSubscriptionData: No token provided");
-        require(_decimals.length > 0, "ArgoSubscriptionData: No decimal provided");
+        require(_symbols.length > 0, "SubscriptionData: No symbol provided");
+        require(_tokens.length > 0, "SubscriptionData: No token provided");
+        require(_decimals.length > 0, "SubscriptionData: No decimal provided");
         require(
             _symbols.length == _tokens.length,
-            "ArgoSubscriptionData: token symbols and token address array length do not match"
+            "SubscriptionData: token symbols and token address array length do not match"
         );
 
         require(
             _symbols.length == _decimals.length,
-            "ArgoSubscriptionData: token symbols and token decimal array length do not match"
+            "SubscriptionData: token symbols and token decimal array length do not match"
         );
 
         require(
             _symbols.length == priceFeedAddress_.length,
-            "ArgoSubscriptionData: token symbols and price feed array length do not match"
+            "SubscriptionData: token symbols and price feed array length do not match"
         );
 
         require(
             _symbols.length == isChainLinkFeed_.length,
-            "ArgoSubscriptionData: token symbols and is chainlink array length do not match"
+            "SubscriptionData: token symbols and is chainlink array length do not match"
         );
         require(
             _symbols.length == priceFeedAddress_.length,
-            "ArgoSubscriptionData: token price feed  and token decimal array length do not match"
+            "SubscriptionData: token price feed  and token decimal array length do not match"
         );
         require(
             _symbols.length == priceFeedPrecision_.length,
-            "ArgoSubscriptionData: token price feed precision and token decimal array length do not match"
+            "SubscriptionData: token price feed precision and token decimal array length do not match"
         );
 
         for (uint256 i = 0; i < _symbols.length; i = unsafeInc(i)) {
-            require(!acceptedTokens[_tokens[i]].accepted, "ArgoSubscriptionData: token already added");
-            require(_tokens[i] != address(0), "ArgoSubscriptionData: token address can not be zero address");
-            require(_decimals[i] > 0, "ArgoSubscriptionData: token decimal can not be zero");
+            require(!acceptedTokens[_tokens[i]].accepted, "SubscriptionData: token already added");
+            require(_tokens[i] != address(0), "SubscriptionData: token address can not be zero address");
+            require(_decimals[i] > 0, "SubscriptionData: token decimal can not be zero");
             bytes memory tempEmptyStringTest = bytes(_symbols[i]);
-            require(tempEmptyStringTest.length != 0, "ArgoSubscriptionData: token symbol can not be empty");
+            require(tempEmptyStringTest.length != 0, "SubscriptionData: token symbol can not be empty");
             Token memory token = Token(
                 _symbols[i],
                 _decimals[i],
@@ -369,12 +369,12 @@ contract SubscriptionData is GovernanceOwnable {
      * @param t token address
      */
     function removeTokens(address[] memory t) external onlyGovernanceAddress {
-        require(t.length > 0, "ArgoSubscriptionData: array length cannot be zero");
-        require(t.length <= 10, "ArgoSubscriptionData: too many tokens to remove");
+        require(t.length > 0, "SubscriptionData: array length cannot be zero");
+        require(t.length <= 10, "SubscriptionData: too many tokens to remove");
 
 
         for (uint256 i = 0; i < t.length; i = unsafeInc(i)) {
-            require(t[i] != address(0), "ArgoSubscriptionData: token address can not be zero address");
+            require(t[i] != address(0), "SubscriptionData: token address can not be zero address");
             if (acceptedTokens[t[i]].accepted) {
                 require(tokens.length > 1, "Cannot remove all payment tokens");
                 for (uint256 j = 0; j < tokens.length; j = unsafeInc(j)) {
@@ -403,7 +403,7 @@ contract SubscriptionData is GovernanceOwnable {
      * @param p new precision value
      */
     function changeUsdPrecision(uint128 p) external onlyManager {
-        require(p != 0, "ArgoSubscriptionData: USD to precision can not be zero");
+        require(p != 0, "SubscriptionData: USD to precision can not be zero");
         usdPricePrecision = p;
     }
 
@@ -414,7 +414,7 @@ contract SubscriptionData is GovernanceOwnable {
     function updateStakedToken(address s) external onlyGovernanceAddress {
         require(
             s != address(0),
-            "ArgoSubscriptionData: staked token address can not be zero address"
+            "SubscriptionData: staked token address can not be zero address"
         );
         stakedToken = IERC20(s);
     }
@@ -487,12 +487,12 @@ contract SubscriptionData is GovernanceOwnable {
      * @param a amount of tokens to withdraw
      */
     function withdrawERC20(address _token, uint256 a) external onlyManager {
-        require(_token != address(0), "ArgoSubscriptionData: token address can not be zero address");
+        require(_token != address(0), "SubscriptionData: token address can not be zero address");
         require(a > 0, "Amount must be greater than 0");
         IERC20 erc20 = IERC20(_token);
         require(
             erc20.balanceOf(address(this)) >= a,
-            "ArgoSubscriptionData: Insufficient tokens in contract"
+            "SubscriptionData: Insufficient tokens in contract"
         );
         erc20.safeTransfer(msg.sender, a);
     }
