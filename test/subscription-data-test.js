@@ -1,7 +1,7 @@
 const { BigNumber } = require("@ethersproject/bignumber");
 const { expect, assert } = require("chai");
 
-describe.skip("Spheron Subscription Data test cases", function () {
+describe("Spheron Subscription Data test cases", function () {
     const amount = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount2 = ethers.BigNumber.from("110").mul(ethers.BigNumber.from(10).pow(18))
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))
@@ -29,7 +29,7 @@ describe.skip("Spheron Subscription Data test cases", function () {
     const feedAddress = ["0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd", "0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0"];
     const feedPrecision = [8, 8]
     let tokenAddresses;
-    const sphePriceAtLastBlock = BigNumber.from("270980320000000000");
+    const sphePriceAtLastBlock = BigNumber.from("1000000");
     beforeEach(async () => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
         [first, second, third, vault] = await ethers.getSigners();
@@ -162,7 +162,7 @@ describe.skip("Spheron Subscription Data test cases", function () {
 
     // });
     it("Should return underlying token price", async function () {
-        const data = await subscriptionData.getUnderlyingPrice(token1.address);
+        const data = await subscriptionData.getUnderlyingPrice(token2.address);
         expect(data.underlyingPrice).to.be.equal(sphePriceAtLastBlock);
 
     });

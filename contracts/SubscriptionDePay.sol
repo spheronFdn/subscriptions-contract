@@ -11,21 +11,21 @@ import "./utils/ERC2771Context.sol";
 contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
     using SafeERC20 for IERC20;
-    address private treasury;
-    address private company;
-    address private pendingCompany;
+    address public treasury;
+    address public company;
+    address public pendingCompany;
 
     struct UserData {
         uint256 deposit;
         uint256 balance;
     }
-    struct UserSub {
-        string[] params;
-        uint256[] values;
-        bool subscribed;
-    }
+    // struct UserSub {
+    //     string[] params;
+    //     uint256[] values;
+    //     bool subscribed;
+    // }
 
-    mapping(address => UserSub) public userSub;    
+    // mapping(address => UserSub) public userSub;    
 
     // (user => (token => UserData))
     mapping(address => mapping(address => UserData)) public userData;
@@ -53,7 +53,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     event CompanySet(address indexed _company);
     event DataContractUpdated(address indexed _dataContract);
     event DepositStatusChanged(bool _status);
-    event UserSubscribed(address indexed user, string[] params, uint256[] values);
+    // event UserSubscribed(address indexed user, string[] params, uint256[] values);
     constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder) {
         require(
             _treasury != address(0),
@@ -72,6 +72,11 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         company = _company;
         
     }
+    // ROLES
+    // Manager - limited to only contract data and does not have access to any funds. responsible for changing deposit and withdrawal status, adding tokens, updating params and other contract data.
+    // Treasury - It would be a Mulitisg acocunt, mostly handled by the company or a governance or DAO
+    // Company - It would be out account with mulitisig
+    // Owner - owner of the contract, responsible for setting the treasury and company address and other core functions that involves users funds.
     /**
      * @notice only manager modifier
      *
@@ -130,7 +135,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     /**
      * @notice approve pending company address
      */
-    function approveSetCompany() external onlyOwnerOrManager {
+    function approveSetCompany() external onlyOwner {
         require(
             pendingCompany != address(0),
             "SpheronSubscriptionPayments: Invalid address for company"
@@ -210,7 +215,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
         );
         require(
             _amount <= companyRevenue[_token],
-            "SpheronSubscriptionPayments: Balance must be less than or equal to user balance"
+            "SpheronSubscriptionPayments: Balance must be less than or equal to company balance"
         );
         IERC20 erc20 = IERC20(_token);
         require(
@@ -274,61 +279,61 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      * @param _params parameters for subscription
      * @param _values list for subscription
      */
-    function setUserSub(
-        string[] memory _params,
-        uint256[] memory _values) external {
-        require(_params.length > 0, "SpheronSubscriptionPayments: No params");
-        require(
-            _params.length == _values.length,
-            "SpheronSubscriptionPayments: unequal length of array"
-        );
-        for(uint256 i = 0; i < _values.length; i = unsafeInc(i)) {
-            require(_values[i] > 0, "SpheronSubscriptionPayments: Invalid value");
-        }
-        userSub[_msgSender()].params = _params;
-        userSub[_msgSender()].values = _values;
-        userSub[_msgSender()].subscribed = true;
-        emit UserSubscribed(_msgSender(), _params, _values);
-    }
+    // function setUserSub(
+    //     string[] memory _params,
+    //     uint256[] memory _values) external {
+    //     require(_params.length > 0, "SpheronSubscriptionPayments: No params");
+    //     require(
+    //         _params.length == _values.length,
+    //         "SpheronSubscriptionPayments: unequal length of array"
+    //     );
+    //     for(uint256 i = 0; i < _values.length; i = unsafeInc(i)) {
+    //         require(_values[i] > 0, "SpheronSubscriptionPayments: Invalid value");
+    //     }
+    //     userSub[_msgSender()].params = _params;
+    //     userSub[_msgSender()].values = _values;
+    //     userSub[_msgSender()].subscribed = true;
+    //     emit UserSubscribed(_msgSender(), _params, _values);
+    // }
 
     /**
      * @notice charge user for subscription
      * @param _user user address
      * @param _token address of token contract
      */
-    function chargeUserSub(
-        address _user,
-        address _token
-    ) external onlyOwnerOrManager {
+    // function chargeUserSub(
+    //     address _user,
+    //     address _token
+    // ) external onlyOwnerOrManager {
 
-        require(
-            userSub[_user].subscribed, 
-            "SpheronSubscriptionPayments: User not subscribed"
-        );
+    //     require(
+    //         userSub[_user].subscribed, 
+    //         "SpheronSubscriptionPayments: User not subscribed"
+    //     );
         
-        require(
-            subscriptionData.isAcceptedToken(_token),
-            "SpheronSubscriptionPayments: Token not accepted"
-        );
-        string[] memory p = userSub[_user].params;
-        uint256[] memory v = userSub[_user].values;
-        uint256 fee = 0;
+    //     require(
+    //         subscriptionData.isAcceptedToken(_token),
+    //         "SpheronSubscriptionPayments: Token not accepted"
+    //     );
+    //     string[] memory p = userSub[_user].params;
+    //     uint256[] memory v = userSub[_user].values;
+    //     uint256 fee = 0;
 
 
-        for (uint256 i = 0; i < p.length; i = unsafeInc(i)) {
-            fee += v[i] * subscriptionData.priceData(p[i]);
-        }
-        uint256 discountedFee = fee - _calculateDiscount(_user, fee);
-        uint256 underlying = _calculatePriceInToken(discountedFee, _token);
-        require(
-            underlying <= userData[_user][_token].balance,
-            "SpheronSubscriptionPayments: Balance must be less than or equal to amount charged"
-        );
-        userData[_user][_token].balance -= underlying;
-        totalCharges[_token] += underlying;
-        companyRevenue[_token] += underlying;
-        emit UserCharged(_user, _token, underlying);
-    }
+    //     for (uint256 i = 0; i < p.length; i = unsafeInc(i)) {
+    //         fee += v[i] * subscriptionData.priceData(p[i]);
+    //     }
+    //     uint256 discountedFee = fee - _calculateDiscount(_user, fee);
+    //     uint256 underlying = _calculatePriceInToken(discountedFee, _token);
+    //     require(
+    //         underlying <= userData[_user][_token].balance,
+    //         "SpheronSubscriptionPayments: Balance must be less than or equal to amount charged"
+    //     );
+    //     userData[_user][_token].balance -= underlying;
+    //     totalCharges[_token] += underlying;
+    //     companyRevenue[_token] += underlying;
+    //     emit UserCharged(_user, _token, underlying);
+    // }
 
     /**
      * @notice change status for user deposit. On or off
@@ -468,7 +473,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     /**
      * @notice prevent the renouncement of the contract ownership by the owner
      */
-    function renounceOwnership() public override {
+    function renounceOwnership() public pure override {
         revert("SpheronSubscriptionPayments: cannot renounce ownership");
     }
 

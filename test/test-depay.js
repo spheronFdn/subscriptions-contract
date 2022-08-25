@@ -8,6 +8,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     const amount3 = ethers.BigNumber.from("120").mul(ethers.BigNumber.from(10).pow(18))
     const amount4 = ethers.BigNumber.from("100").mul(ethers.BigNumber.from(10).pow(18))
     const amount5 = ethers.BigNumber.from("50").mul(ethers.BigNumber.from(10).pow(18))
+    const amount6 = ethers.BigNumber.from("35").mul(ethers.BigNumber.from(10).pow(18))
     let tokenAmount = ethers.BigNumber.from("10000000").mul(ethers.BigNumber.from(10).pow(18))
     let approvalAmount = ethers.BigNumber.from("1000").mul(ethers.BigNumber.from(10).pow(18))
     let Staking;
@@ -18,7 +19,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     let subscriptionDePay;
     let Token;
     let token1, token2;
-    let first, second, third, vault, treasury, company;
+    let first, second, third, vault, treasury, company, newTreasury, newCompany;
     let params = ["build", "sockets", "hooks"]
     const prices = [BigNumber.from(10).pow(17), BigNumber.from(5).mul(BigNumber.from(10).pow(17)), BigNumber.from(10).pow(16)]
     let priceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd"
@@ -38,15 +39,20 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
     let tokenAddresses;
     beforeEach(async() => {
         epoch1Start = Math.floor(Date.now() / 1000) + 1000;
-        [first, second, third, vault, treasury, trustForwarded, company] = await ethers.getSigners();
+        [first, second, third, vault, treasury, trustForwarded, company, newTreasury, newCompany] = await ethers.getSigners();
         Token = await ethers.getContractFactory("SPHERON")
         token1 = await Token.deploy(tokenAmount)
         await token1.deployed();
         token2 = await Token.deploy(tokenAmount)
         await token2.deployed();
+        token3 = await Token.deploy(tokenAmount)
+        await token3.deployed();
+        token4 = await Token.deploy(tokenAmount)
+        await token4.deployed();
         token1.transfer(second.address, tokenAmount)
         token2.transfer(second.address, tokenAmount)
         tokenAddresses = [token1.address, token2.address];
+        newtokenAddresses = [token3.address, token4.address];
         SubscriptionData = await ethers.getContractFactory("SubscriptionData");
         Staking = await ethers.getContractFactory("StakingMock");
         staking = await Staking.connect(first).deploy(epoch1Start, epochDuration, vault.address);
@@ -93,8 +99,9 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
             fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
         fee = fee.div(BigNumber.from(10).pow(12));
-        let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(await subscriptionData.getUnderlyingPrice(token2.address))
-        expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying.underlyingPrice);
+        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice);
+        expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying);
     });
     it("Should enable user withdraw balance", async function() {
         await token2.connect(second).approve(subscriptionDePay.address, amount4);
@@ -105,24 +112,40 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         let ball = (ethers.BigNumber.from(balance.balance));
         expect (ball).to.be.equal(amount5);
     });
+    it("Should enable company withdraw balance", async function() {
+        let _params = ["build", "sockets", "hooks"]
+        let _values = [BigNumber.from("10"), BigNumber.from("1"), BigNumber.from("2")]
+        let fee = BigNumber.from("0");
+        for (let i = 0; i < _params.length; i++) {
+            fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
+        }
+        fee = fee.div(BigNumber.from(10).pow(12));
+        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice);
+        await token2.connect(second).approve(subscriptionDePay.address, underlying);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, underlying);
+        await subscriptionDePay.connect(first).chargeUser(second.address, _params, _values, token2.address);
+        token2.connect(treasury).approve(subscriptionDePay.address, underlying);
+        await subscriptionDePay.connect(company).companyWithdraw(token2.address, underlying);
+        let balance = await subscriptionDePay.companyRevenue(token2.address);
+        let ball = (ethers.BigNumber.from(balance));
+        expect (ball).to.be.equal(BigNumber.from("0"));
+    });
 
     it("Should charge user after adding tokens", async function () {
         let _params = ["build", "sockets", "hooks"]
         let _values = [BigNumber.from("10"), BigNumber.from("1"), BigNumber.from("2")]
-        await subscriptionData.setGovernanceAddress(third.address);
-        await subscriptionData.connect(third).addNewTokens(priceFeedSymbols, tokenAddresses, tokenDecimals, isChainlink, feedAddress, feedPrecision);
         let fee = BigNumber.from("0");
-        let underlying = await subscriptionData.getUnderlyingPrice(token1.address);
         for (let i = 0; i < _params.length; i++) {
-            let price = await subscriptionData.priceData(_params[i]);
-            fee = fee.add(price.mul(_values[i]));
+            fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
-        fee = fee.mul(BigNumber.from(10).pow(18)).div(underlying) 
-        await token1.connect(second).approve(subscriptionDePay.address, fee)
-        await subscriptionDePay.connect(second).userDeposit(token1.address, fee);
-        await subscriptionDePay.connect(first).chargeUser(second.address, _params, _values, token1.address);
-        var bal = token1.balanceOf(third.address);
-        expect(await subscriptionDePay.getTotalCharges(token1.address)).to.be.equal(fee);
+        fee = fee.div(BigNumber.from(10).pow(12));
+        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice); 
+        await token2.connect(second).approve(subscriptionDePay.address, underlying)
+        await subscriptionDePay.connect(second).userDeposit(token2.address, underlying);
+        await subscriptionDePay.connect(first).chargeUser(second.address, _params, _values, token2.address);
+        expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying);
     });
 
     it("Should not charge users after removing token", async function () {
@@ -130,16 +153,60 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         let _values = [BigNumber.from("10"), BigNumber.from("1"), BigNumber.from("2")]
         await subscriptionData.setGovernanceAddress(third.address);
         await subscriptionData.connect(third).removeTokens([token1.address]);
-        let underlying = await subscriptionData.getUnderlyingPrice(token1.address);
-        let fee = BigNumber.from("0");
-        for (let i = 0; i < _params.length; i++) {
-            fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
-        }
-        fee = fee.sub(fee.mul(BigNumber.from(15)).mul(PRECISION).div(PERCENT))  
-        fee = fee.mul(underlying).div(BigNumber.from(10).pow(18)) 
-        await token1.connect(second).approve(subscriptionDePay.address, fee)
-        let tx = subscriptionDePay.connect(first).chargeUser(second.address, _params, _values, token1.address);
-        await expect(tx).to.be.revertedWith("Token is not accepted");
+        let underlying = subscriptionData.getUnderlyingPrice(token1.address);
+        await expect(underlying).to.be.revertedWith("Token is not accepted");
     });
+    it("it should set treasury by owner", async function () {
+        await subscriptionDePay.connect(first).setTreasury(newTreasury.address);
+        let address = await subscriptionDePay.treasury();
+        expect(address.toLowerCase()).to.equal(newTreasury.address.toLowerCase())
+    });
+
+    it("it should restrict set to only owner or manager", async function () {
+        let tx = subscriptionDePay.connect(second).setTreasury(newTreasury.address);
+        await expect(tx).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("should change company address", async function () {
+        await subscriptionDePay.connect(company).setCompany(newCompany.address);
+        await subscriptionDePay.connect(first).approveSetCompany();
+        let address = await subscriptionDePay.company();
+        expect(address.toLowerCase()).to.equal(newCompany.address.toLowerCase());
+    });
+    it("should change the deposit status", async function () {
+        await subscriptionDePay.connect(first).changeDepositStatus();
+        let status = await subscriptionDePay.pauseDeposit();
+        expect(status).to.equal(true);
+    });
+    it("should change the withdrawal status", async function () {
+        await subscriptionDePay.connect(first).changeWithdrawalStatus();
+        let status = await subscriptionDePay.pauseWithdrawal();
+        expect(status).to.equal(true);
+    });
+    it("should return correct user data", async function () {
+        await token2.connect(second).approve(subscriptionDePay.address, amount6);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, amount6);
+        let data = await subscriptionDePay.getUserData(second.address, token2.address);
+        expect(data.deposit).to.equal(amount6);
+    });
+    it("should return total deposits", async function () {
+        await token2.connect(second).approve(subscriptionDePay.address, amount6);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, amount6);
+        await token2.connect(second).approve(subscriptionDePay.address, amount5);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, amount5);
+        let data = await subscriptionDePay.getTotalDeposit(token2.address);
+        expect(data).to.equal(amount6.add(amount5));
+    });
+    it("should retrun total withdrawals", async function () {
+        await token2.connect(second).approve(subscriptionDePay.address, amount6);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, amount6);
+        await token2.connect(second).approve(subscriptionDePay.address, amount5);
+        await subscriptionDePay.connect(second).userDeposit(token2.address, amount5);
+        token2.connect(treasury).approve(subscriptionDePay.address, amount6);
+        await subscriptionDePay.connect(second).userWithdraw(token2.address, amount6);
+        let data = await subscriptionDePay.getTotalWithdraws(token2.address);
+        expect(data).to.equal(amount6);
+    });
+
 
 })
