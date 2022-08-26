@@ -17,7 +17,7 @@ interface ISubscriptionData {
 
     function stakedToken() external view returns (address);
 
-    function getUnderlyingPrice(address t) external view returns (uint256);
+    function getUnderlyingPrice(address t) external view returns (uint256, uint256);
 
     function escrow() external view returns (address);
 

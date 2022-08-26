@@ -1,21 +1,22 @@
 {
-    "name": "hardhat-project",
-    "devDependencies": {
-        "@nomiclabs/hardhat-ethers": "^2.0.2",
-        "@nomiclabs/hardhat-etherscan": "^2.1.8",
-        "@nomiclabs/hardhat-waffle": "^2.0.1",
-        "chai": "^4.3.4",
-        "ethereum-waffle": "^3.4.0",
-        "ethers": "^5.4.6",
-        "hardhat": "^2.6.3"
-    },
-    "scripts": {
-        "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
-    },
-    "dependencies": {
-        "@chainlink/contracts": "^0.3.0",
-        "@openzeppelin/contracts": "^4.3.1",
-        "dotenv": "^16.0.0",
-        "sol-merger": "^3.1.0"
-    }
+  "name": "hardhat-project",
+  "devDependencies": {
+      "@nomiclabs/hardhat-ethers": "^2.0.2",
+      "@nomiclabs/hardhat-etherscan": "^2.1.8",
+      "@nomiclabs/hardhat-waffle": "^2.0.1",
+      "chai": "^4.3.4",
+      "ethereum-waffle": "^3.4.0",
+      "ethers": "^5.4.6",
+      "hardhat": "^2.6.3",
+      "solidity-coverage": "^0.7.21"
+  },
+  "scripts": {
+      "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
+  },
+  "dependencies": {
+      "@chainlink/contracts": "^0.3.0",
+      "@openzeppelin/contracts": "^4.3.1",
+      "dotenv": "^16.0.0",
+      "sol-merger": "^3.1.0"
+  }
 }

@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-etherscan");
-
+require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -21,8 +21,8 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
     solidity: {
-        version: "0.8.4",
-    },
+        version: "0.8.16",
+    }, 
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/

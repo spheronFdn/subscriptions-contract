@@ -18,6 +18,7 @@ contract GovernanceOwnable is MultiOwnable {
      * @param g address of governance contract
      */
     function setGovernanceAddress(address g) public onlyOwner {
+        require(g != address(0), "Address cannot be zero address");
         governanceAddress = g;
     }
 }
