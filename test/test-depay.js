@@ -164,12 +164,12 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
 
     it("it should restrict set to only owner or manager", async function () {
         let tx = subscriptionDePay.connect(second).setTreasury(newTreasury.address);
-        await expect(tx).to.be.revertedWith("Ownable: caller is not the owner");
+        await expect(tx).to.be.revertedWith("Only manager and owner can call this function");
     });
 
     it("should change company address", async function () {
         await subscriptionDePay.connect(company).setCompany(newCompany.address);
-        await subscriptionDePay.connect(first).approveSetCompany();
+        await subscriptionDePay.connect(first).approveSetCompany(newCompany.address);
         let address = await subscriptionDePay.company();
         expect(address.toLowerCase()).to.equal(newCompany.address.toLowerCase());
     });

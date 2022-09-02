@@ -7,8 +7,6 @@ interface IDiaOracle {
 
 	function updateOracleUpdaterAddress(address newOracleUpdaterAddress) external;
     
-	function updateCoinInfo(string calldata name, string calldata symbol, uint256 newPrice, uint256 newSupply, uint256 newTimestamp) external;
-    
 	function getValue(string memory key) external view returns (uint128, uint128);
 
 }

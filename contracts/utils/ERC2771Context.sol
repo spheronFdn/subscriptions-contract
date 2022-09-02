@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
-
+import "./../interfaces/ISubscriptionData.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
@@ -9,9 +9,12 @@ import "@openzeppelin/contracts/utils/Context.sol";
  */
 abstract contract ERC2771Context is Context {
     address private _trustedForwarder;
+    event ChangeTrustedForwarder(address indexed trustedForwarder);
+    ISubscriptionData public subscriptionData;
 
-    constructor(address trustedForwarder) {
+    constructor(address trustedForwarder, address _data) {
         _trustedForwarder = trustedForwarder;
+        subscriptionData = ISubscriptionData(_data);
     }
 
     function isTrustedForwarder(address forwarder) public view virtual returns (bool) {
@@ -38,6 +41,8 @@ abstract contract ERC2771Context is Context {
     }
 
     function setTrustedForwarder(address forwarder) public virtual {
+        require(subscriptionData.isManager(msg.sender), "Only manager can call this function");
         _trustedForwarder = forwarder;
+        emit ChangeTrustedForwarder(forwarder);
     }
 }

@@ -108,7 +108,10 @@ contract MultiOwnable {
      * @return list of all managers
      */
 
-    function isManager(address addr) external view returns (bool) {
-        return managerByAddress[addr];
+    function isManager(address addr) public view returns (bool) {
+        if(managerByAddress[addr] == true || addr == owner) {
+            return true;
+        }
+        return false;
     }
 }
