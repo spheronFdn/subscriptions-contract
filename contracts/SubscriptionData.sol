@@ -164,12 +164,15 @@ contract SubscriptionData is GovernanceOwnable {
         external
         onlyManager
     {
+        require(_params.length > 0, "SubscriptionData: No parameters provided");
+        require(_prices.length > 0, "SubscriptionData: No prices provided");
         require(
             _params.length == _prices.length,
             "Subscription Data: unequal length of array"
         );
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
+            require(_prices[i] > 0, "SubscriptionData: Price of parameter can not be zero");
             uint256 price = _prices[i];
             priceData[name] = price;
             if (!availableParams[name]) {
