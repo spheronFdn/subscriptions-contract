@@ -55,7 +55,7 @@ contract SubscriptionData is GovernanceOwnable {
 
     // list of accepted tokens
     address[] public tokens;
-    uint256 public constant maxNumber = 10;
+    uint256 public constant MAX_NUMBER = 10;
 
     //values prcision, it will be in USD, like USDPRICE * 10 **18
     uint128 public usdPricePrecision;
@@ -109,10 +109,10 @@ contract SubscriptionData is GovernanceOwnable {
         require(_params.length > 0, "SubscriptionData: No parameters provided");
         require(_prices.length > 0, "SubscriptionData: No prices provided");
         require(
-            slabAmounts_.length > 0 && slabAmounts_.length <= maxNumber, 
+            slabAmounts_.length > 0 && slabAmounts_.length <= MAX_NUMBER, 
             "SubscriptionData: discount slabs out of range");
         require(
-            slabPercents_.length > 0 && slabPercents_.length <=maxNumber, 
+            slabPercents_.length > 0 && slabPercents_.length <=MAX_NUMBER, 
             "SubscriptionData: discount percents out of range");
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             require(!availableParams[_params[i]], "SubscriptionData: Parameter already exists");
@@ -189,7 +189,7 @@ contract SubscriptionData is GovernanceOwnable {
      */
     function deleteParams(string[] memory _params) external onlyManager {
         require(_params.length != 0, "Subscription Data: empty array");
-        require(_params.length <= maxNumber, "Subscription Data: too much parameters");
+        require(_params.length <= MAX_NUMBER, "Subscription Data: too much parameters");
 
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
@@ -256,7 +256,7 @@ contract SubscriptionData is GovernanceOwnable {
             "SubscriptionData: discount slabs array and discount amount array have different size"
         );
         require(
-            slabPercents_.length <= maxNumber,
+            slabPercents_.length <= MAX_NUMBER,
             "SubscriptionData: discount slabs array can not be more than 10"
         );
         delete discountSlabs;
@@ -371,7 +371,7 @@ contract SubscriptionData is GovernanceOwnable {
      */
     function removeTokens(address[] memory t) external onlyGovernanceAddress {
         require(t.length > 0, "SubscriptionData: array length cannot be zero");
-        require(t.length <= maxNumber, "SubscriptionData: too many tokens to remove");
+        require(t.length <= MAX_NUMBER, "SubscriptionData: too many tokens to remove");
 
 
         for (uint256 i = 0; i < t.length; i = unsafeInc(i)) {

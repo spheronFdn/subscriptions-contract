@@ -41,6 +41,7 @@ abstract contract ERC2771Context is Context {
     }
 
     function setTrustedForwarder(address forwarder) public virtual {
+        require(forwarder != address(0), "Forwarder cannot be zero address");
         require(subscriptionData.isManager(msg.sender), "Only manager can call this function");
         _trustedForwarder = forwarder;
         emit ChangeTrustedForwarder(forwarder);

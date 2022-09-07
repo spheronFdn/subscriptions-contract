@@ -29,7 +29,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
     // (user => (token => UserData))
     mapping(address => mapping(address => UserData)) public userData;
 
-    uint256 public constant timestampGap = 21600;
+    uint256 public constant TIMESTAP_GAP = 21600;
     
     // to temporarily pause the deposit and withdrawal function
     bool public pauseDeposit;
@@ -97,7 +97,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
     modifier onlyCompany() {
         require(
             _msgSender() == company || subscriptionData.isManager(_msgSender()),
-            "Only company and owner can call this function"
+            "Only company and managers can call this function"
         );
         _;
     }
@@ -414,7 +414,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
             uint256 underlyingPrice,
             uint256 timestamp
         ) = subscriptionData.getUnderlyingPrice(t);
-        require((block.timestamp - timestamp) <= timestampGap, "SpheronSubscriptionPayments: underlying price not updated");
+        require((block.timestamp - timestamp) <= TIMESTAP_GAP, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }
 
