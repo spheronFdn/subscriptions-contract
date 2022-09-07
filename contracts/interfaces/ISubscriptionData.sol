@@ -52,4 +52,6 @@ interface ISubscriptionData {
             uint128 priceFeedPrecision
         );
     function isAcceptedToken(address token) external returns (bool);
+
+    function isManager(address user) external returns (bool);
 }

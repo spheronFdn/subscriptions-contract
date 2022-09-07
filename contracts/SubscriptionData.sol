@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IStaking.sol";
 import "./utils/GovernanceOwnable.sol";
-import "./utils/Pausable.sol";
 import "./utils/MultiOwnable.sol";
 import "./interfaces/IDiaOracle.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -56,6 +55,7 @@ contract SubscriptionData is GovernanceOwnable {
 
     // list of accepted tokens
     address[] public tokens;
+    uint256 public constant MAX_NUMBER = 10;
 
     //values prcision, it will be in USD, like USDPRICE * 10 **18
     uint128 public usdPricePrecision;
@@ -109,10 +109,10 @@ contract SubscriptionData is GovernanceOwnable {
         require(_params.length > 0, "SubscriptionData: No parameters provided");
         require(_prices.length > 0, "SubscriptionData: No prices provided");
         require(
-            slabAmounts_.length > 0 && slabAmounts_.length <= 10, 
+            slabAmounts_.length > 0 && slabAmounts_.length <= MAX_NUMBER, 
             "SubscriptionData: discount slabs out of range");
         require(
-            slabPercents_.length > 0 && slabPercents_.length <=10, 
+            slabPercents_.length > 0 && slabPercents_.length <=MAX_NUMBER, 
             "SubscriptionData: discount percents out of range");
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             require(!availableParams[_params[i]], "SubscriptionData: Parameter already exists");
@@ -164,12 +164,15 @@ contract SubscriptionData is GovernanceOwnable {
         external
         onlyManager
     {
+        require(_params.length > 0, "SubscriptionData: No parameters provided");
+        require(_prices.length > 0, "SubscriptionData: No prices provided");
         require(
             _params.length == _prices.length,
             "Subscription Data: unequal length of array"
         );
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
+            require(_prices[i] > 0, "SubscriptionData: Price of parameter can not be zero");
             uint256 price = _prices[i];
             priceData[name] = price;
             if (!availableParams[name]) {
@@ -186,7 +189,7 @@ contract SubscriptionData is GovernanceOwnable {
      */
     function deleteParams(string[] memory _params) external onlyManager {
         require(_params.length != 0, "Subscription Data: empty array");
-        require(_params.length <= 10, "Subscription Data: too much parameters");
+        require(_params.length <= MAX_NUMBER, "Subscription Data: too much parameters");
 
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
@@ -253,11 +256,9 @@ contract SubscriptionData is GovernanceOwnable {
             "SubscriptionData: discount slabs array and discount amount array have different size"
         );
         require(
-            slabAmounts_.length > 0 && slabAmounts_.length <= (10 - discountSlabs.length),
-             "SubscriptionData: discount slabs out of range");
-        require(
-            slabPercents_.length > 0 && slabPercents_.length <= (10 - discountSlabs.length),
-             "SubscriptionData: discount percents out of range");
+            slabPercents_.length <= MAX_NUMBER,
+            "SubscriptionData: discount slabs array can not be more than 10"
+        );
         delete discountSlabs;
         require(isIncremental(slabAmounts_), "SubscriptionData: discount slabs array is not incremental");
         require(isIncremental(slabPercents_), "SubscriptionData: discount percent array is not incremental");
@@ -370,7 +371,7 @@ contract SubscriptionData is GovernanceOwnable {
      */
     function removeTokens(address[] memory t) external onlyGovernanceAddress {
         require(t.length > 0, "SubscriptionData: array length cannot be zero");
-        require(t.length <= 10, "SubscriptionData: too many tokens to remove");
+        require(t.length <= MAX_NUMBER, "SubscriptionData: too many tokens to remove");
 
 
         for (uint256 i = 0; i < t.length; i = unsafeInc(i)) {

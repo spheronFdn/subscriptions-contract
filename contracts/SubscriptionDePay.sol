@@ -1,6 +1,5 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.16;
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISubscriptionData.sol";
 import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -8,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./utils/ERC2771Context.sol";
 
-contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
+contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
 
     using SafeERC20 for IERC20;
     address public treasury;
@@ -29,12 +28,12 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
 
     // (user => (token => UserData))
     mapping(address => mapping(address => UserData)) public userData;
+
+    uint256 public constant TIMESTAP_GAP = 21600;
     
     // to temporarily pause the deposit and withdrawal function
     bool public pauseDeposit;
     bool public pauseWithdrawal;
-
-    ISubscriptionData public subscriptionData;
 
     //For improved precision
     uint256 constant PRECISION = 10**25;
@@ -51,10 +50,12 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     event CompanyWithdraw(address indexed token, uint256 amount);
     event TreasurySet(address indexed _treasury);
     event CompanySet(address indexed _company);
+    event CompanyPendingSet(address indexed _company);
     event DataContractUpdated(address indexed _dataContract);
     event DepositStatusChanged(bool _status);
+    event WithdrawalStatusChanged(bool _status);
     // event UserSubscribed(address indexed user, string[] params, uint256[] values);
-    constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder) {
+    constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder, _data) {
         require(
             _treasury != address(0),
             "SpheronSubscriptionPayments: Invalid address for treasury"
@@ -82,10 +83,9 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      *
      */
     modifier onlyOwnerOrManager() {
-        bool isManager = subscriptionData.managerByAddress(_msgSender());
-        address owner = owner();
+        bool hasAccess = subscriptionData.isManager(_msgSender());
         require(
-            isManager || _msgSender() == owner,
+            hasAccess,
             "Only manager and owner can call this function"
         );
         _;
@@ -95,10 +95,9 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      *
      */
     modifier onlyCompany() {
-        address owner = owner();
         require(
-            _msgSender() == company || _msgSender() == owner,
-            "Only company and owner can call this function"
+            _msgSender() == company || subscriptionData.isManager(_msgSender()),
+            "Only company and managers can call this function"
         );
         _;
     }
@@ -113,7 +112,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      * @notice set address of the treasury
      * @param _treasury treasury address
      */
-    function setTreasury(address _treasury) external onlyOwner {
+    function setTreasury(address _treasury) external onlyOwnerOrManager {
         require(
             _treasury != address(0),
             "SpheronSubscriptionPayments: Invalid address for treasury"
@@ -131,16 +130,21 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             "SpheronSubscriptionPayments: Invalid address for company"
         );
         pendingCompany = _company;
+        emit CompanyPendingSet(pendingCompany);
     }
     /**
      * @notice approve pending company address
      */
-    function approveSetCompany() external onlyOwner {
+    function approveSetCompany(address _pendingCompany) external onlyOwnerOrManager {
         require(
             pendingCompany != address(0),
             "SpheronSubscriptionPayments: Invalid address for company"
         );
+        require(
+            _pendingCompany != address(0) && _pendingCompany == pendingCompany,
+            "");
         company = pendingCompany;
+        pendingCompany = address(0);
         emit CompanySet(company);
     }
     /**
@@ -348,6 +352,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
      */
     function changeWithdrawalStatus() public onlyOwnerOrManager {
         pauseWithdrawal = !pauseWithdrawal;
+        emit WithdrawalStatusChanged(pauseWithdrawal);
     }
     /**
      * @notice update subscriptionDataContract
@@ -409,7 +414,7 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
             uint256 underlyingPrice,
             uint256 timestamp
         ) = subscriptionData.getUnderlyingPrice(t);
-        require((block.timestamp - timestamp) <= 21600, "SpheronSubscriptionPayments: underlying price not updated");
+        require((block.timestamp - timestamp) <= TIMESTAP_GAP, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }
 
@@ -459,22 +464,13 @@ contract SubscriptionDePay is Ownable, ReentrancyGuard, ERC2771Context {
     function getTotalCharges(address t) public view returns (uint256) {
         return totalCharges[t];
     }
-    function _msgSender() internal view override(Context, ERC2771Context)
+    function _msgSender() internal view override(ERC2771Context)
       returns (address sender) {
       sender = ERC2771Context._msgSender();
     }
-    function _msgData() internal view override(Context, ERC2771Context)
+    function _msgData() internal view override(ERC2771Context)
       returns (bytes calldata) {
       return ERC2771Context._msgData();
-    }
-    function setTrustedForwarder(address _forwarder) public override onlyOwnerOrManager {
-        ERC2771Context.setTrustedForwarder(_forwarder);
-    }
-    /**
-     * @notice prevent the renouncement of the contract ownership by the owner
-     */
-    function renounceOwnership() public pure override {
-        revert("SpheronSubscriptionPayments: cannot renounce ownership");
     }
 
 }
