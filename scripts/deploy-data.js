@@ -15,8 +15,8 @@ const hre = require("hardhat");
 // const amount3 = ethers.BigNumber.from("120").mul(
 //   ethers.BigNumber.from(10).pow(18)
 // );
-const discountSlabs = [];
-const discountPercents = [];
+const discountSlabs = [100, 200, 300];
+const discountPercents = [10, 20, 30];
 const spheTestToken = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // const usdcTest = "0xE163A5689Dc303f5A7AFdbbb050432Fb5a8E7174";
 const escrow = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
@@ -86,7 +86,7 @@ async function main() {
 
   // We get the contract to deploy
   // console.log(prices)
-  //   const Data = await hre.ethers.getContractFactory("SubscriptionData");
+    const Data = await hre.ethers.getContractFactory("SubscriptionData");
   const constructorArgs = [
     params,
     prices,
@@ -95,13 +95,13 @@ async function main() {
     discountPercents,
     spheTestToken,
   ];
-  //   const data = await Data.deploy(...constructorArgs);
-  //   await data.deployed();
+    // const data = await Data.deploy(...constructorArgs);
+    // await data.deployed();
   await hre.run("verify:verify", {
-    address: "0x889124cD6Ef997fc7a2cE9ed9149866337F22f66",
+    address: "0xAc7062a6b08aB30a8E0C09353E3f57b7A2848cB3",
     constructorArguments: constructorArgs,
   });
-  console.log("Payments contract deployed to:", data.address);
+  // console.log("Data contract deployed to:", data.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -99,7 +99,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
             fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
         fee = fee.div(BigNumber.from(10).pow(12));
-        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let figure = await subscriptionDePay.getUnderlyingPrice(token2.address);
         let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice);
         expect(await subscriptionDePay.getTotalCharges(token2.address)).to.be.equal(underlying);
     });
@@ -120,7 +120,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
             fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
         fee = fee.div(BigNumber.from(10).pow(12));
-        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let figure = await subscriptionDePay.getUnderlyingPrice(token2.address);
         let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice);
         await token2.connect(second).approve(subscriptionDePay.address, underlying);
         await subscriptionDePay.connect(second).userDeposit(token2.address, underlying);
@@ -140,7 +140,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
             fee = fee.add((await subscriptionData.priceData(_params[i])).mul(_values[i]));
         }
         fee = fee.div(BigNumber.from(10).pow(12));
-        let figure = await subscriptionData.getUnderlyingPrice(token2.address);
+        let figure = await subscriptionDePay.getUnderlyingPrice(token2.address);
         let underlying = fee.mul(ethers.BigNumber.from(10).pow(6)).div(figure.underlyingPrice); 
         await token2.connect(second).approve(subscriptionDePay.address, underlying)
         await subscriptionDePay.connect(second).userDeposit(token2.address, underlying);
@@ -153,7 +153,7 @@ describe("Spheron Subscription Decentralized Payment test cases", function() {
         let _values = [BigNumber.from("10"), BigNumber.from("1"), BigNumber.from("2")]
         await subscriptionData.setGovernanceAddress(third.address);
         await subscriptionData.connect(third).removeTokens([token1.address]);
-        let underlying = subscriptionData.getUnderlyingPrice(token1.address);
+        let underlying = subscriptionDePay.getUnderlyingPrice(token1.address);
         await expect(underlying).to.be.revertedWith("Token is not accepted");
     });
     it("it should set treasury by owner", async function () {

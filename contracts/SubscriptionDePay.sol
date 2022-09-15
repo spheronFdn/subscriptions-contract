@@ -1,11 +1,13 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 import "./interfaces/ISubscriptionData.sol";
 import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./utils/ERC2771Context.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./interfaces/IDiaOracle.sol";
 
 contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
 
@@ -202,7 +204,6 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         erc20.safeTransferFrom(treasury, _msgSender(), _amount);
         emit UserWithdraw(_msgSender(), _token, _amount); 
     }
-
     /**
      * @notice company token withdrawal of one of the accepted erc20 from the treasury
      * @param _token address of erc20 token
@@ -396,7 +397,51 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         }
         return (a * percent * PRECISION) / PERCENT;
     }
-
+    /**
+     * @notice get price of underlying token
+     * @param t underlying token address
+     * @return underlyingPrice of underlying token in usd
+     * @return timestamp of underlying token in usd
+     */
+    function getUnderlyingPrice(address t) public view returns (uint256 underlyingPrice, uint256 timestamp) {
+        (string memory symbol,
+        uint128 decimals,
+        ,
+        bool accepted,
+        bool isChainLinkFeed,
+        address priceFeedAddress,
+        uint128 priceFeedPrecision) = subscriptionData.acceptedTokens(t);
+        require(accepted, "Token is not accepted");
+        uint256 _price;
+        uint256 _timestamp;
+        if (isChainLinkFeed) {
+            AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(
+                priceFeedAddress
+            );
+            (
+                uint80 roundID,
+                int256 price,
+                uint256 startedAt,
+                uint256 timeStamp,
+                uint80 answeredInRound
+            ) = chainlinkFeed.latestRoundData();
+            _price = uint256(price);
+            _timestamp = uint256(timeStamp);
+        } else {
+            IDiaOracle priceFeed = IDiaOracle(priceFeedAddress);
+            (uint128 price, uint128 timeStamp) = priceFeed.getValue(
+                symbol
+            );
+            _price = price;
+            _timestamp = timeStamp;
+        }
+        uint256 price = _toPrecision(
+            uint256(_price),
+            priceFeedPrecision,
+            decimals
+        );
+        return (price, _timestamp);
+    }
     /**
      * @dev calculate price in Spheron
      * @notice ensure that price is within 6 hour window
@@ -413,7 +458,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         (
             uint256 underlyingPrice,
             uint256 timestamp
-        ) = subscriptionData.getUnderlyingPrice(t);
+        ) = getUnderlyingPrice(t);
         require((block.timestamp - timestamp) <= TIMESTAP_GAP, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }

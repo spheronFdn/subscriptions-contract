@@ -79,12 +79,12 @@ describe("Spheron Subscription Data test cases", function () {
     });
     it("Escrow address should be non zero should.", async function () {
         subscriptionData = SubscriptionData.deploy(params, prices, "0x0000000000000000000000000000000000000000", discountSlabs, discountPercents, token1.address);
-        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: Escrow address can not be zero address");
+        await expect(subscriptionData).to.be.revertedWith("Invalid escrow address");
     });
     it("Array of discount slab should be equal", async function () {
         let _slabs = [amount, amount2];
         subscriptionData = SubscriptionData.deploy(params, prices, third.address, _slabs, discountPercents, token1.address);
-        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: discount slabs array and discount amount array have different size");
+        await expect(subscriptionData).to.be.revertedWith("unequal length of array");
     });
 
     it("update params", async function () {
@@ -134,7 +134,7 @@ describe("Spheron Subscription Data test cases", function () {
 
     it("staked token address should be non zero.", async function () {
         subscriptionData = SubscriptionData.deploy(params, prices, third.address, discountSlabs, discountPercents, "0x0000000000000000000000000000000000000000");
-        await expect(subscriptionData).to.be.revertedWith("SubscriptionData: staked token address can not be zero address");
+        await expect(subscriptionData).to.be.revertedWith("Invalid stake address");
     });
     it("Should enable discounts", async function () {
         await subscriptionData.enableDiscounts(staking.address);
@@ -146,13 +146,6 @@ describe("Spheron Subscription Data test cases", function () {
         assert.deepEqual(slabs, discountSlabs)
         assert.deepEqual(percents, discountPercents)
     });
-    it("It should perform emergency withdraw", async function () {
-        await token1.connect(second).transfer(subscriptionData.address, approvalAmount)
-        var bal = await token1.balanceOf(first.address);
-        await subscriptionData.connect(first).withdrawERC20(token1.address, approvalAmount);
-        var bal1 = await token1.balanceOf(first.address);
-        expect(approvalAmount).to.equal(bal1.sub(bal))
-    });
     // it("Should pause", async function () {
     //     subscriptionData.connect(first).pause();
     // });
@@ -161,11 +154,6 @@ describe("Spheron Subscription Data test cases", function () {
     //     subscriptionData.connect(first).unpause();
 
     // });
-    it("Should return underlying token price", async function () {
-        const data = await subscriptionData.getUnderlyingPrice(token2.address);
-        expect(data.underlyingPrice).to.be.equal(sphePriceAtLastBlock);
-
-    });
     it("Should change USD price precisions", async function () {
         await subscriptionData.changeUsdPrecision(17);
         const precision = await subscriptionData.usdPricePrecision();

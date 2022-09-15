@@ -41,7 +41,7 @@ interface ISubscriptionData {
     function changeUsdPrecision(uint128 p) external;
 
     function acceptedTokens(address token)
-        external
+        external view
         returns (
             string memory symbol,
             uint128 decimals,

@@ -1,13 +1,11 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.16;
+pragma solidity 0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IStaking.sol";
 import "./utils/GovernanceOwnable.sol";
 import "./utils/MultiOwnable.sol";
-import "./interfaces/IDiaOracle.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract SubscriptionData is GovernanceOwnable {
 
@@ -55,7 +53,7 @@ contract SubscriptionData is GovernanceOwnable {
 
     // list of accepted tokens
     address[] public tokens;
-    uint256 public constant MAX_NUMBER = 10;
+    uint256 public constant MAX_NUMBER = 20;
 
     //values prcision, it will be in USD, like USDPRICE * 10 **18
     uint128 public usdPricePrecision;
@@ -92,31 +90,30 @@ contract SubscriptionData is GovernanceOwnable {
     ) {
         require(
             _params.length == _prices.length,
-            "SubscriptionData: unequal length of array"
+            "unequal length of array"
         );
         require(
             _escrow != address(0),
-            "SubscriptionData: Escrow address can not be zero address"
+            "Invalid escrow address"
         );
         require(
             _stakedToken != address(0),
-            "SubscriptionData: staked token address can not be zero address"
+            "Invalid stake address"
         );
         require(
             slabAmounts_.length == slabPercents_.length,
-            "SubscriptionData: discount slabs array and discount amount array have different size"
+            "unequal length of array"
         );
-        require(_params.length > 0, "SubscriptionData: No parameters provided");
-        require(_prices.length > 0, "SubscriptionData: No prices provided");
+        require(_params.length > 0, "Invalid params");
+        require(_prices.length > 0, "Invalid prices");
         require(
             slabAmounts_.length > 0 && slabAmounts_.length <= MAX_NUMBER, 
-            "SubscriptionData: discount slabs out of range");
+            "discount slabs out of range");
         require(
             slabPercents_.length > 0 && slabPercents_.length <=MAX_NUMBER, 
-            "SubscriptionData: discount percents out of range");
+            "discount percents out of range");
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
-            require(!availableParams[_params[i]], "SubscriptionData: Parameter already exists");
-            require(_prices[i] > 0, "SubscriptionData: Price of parameter can not be zero");
+            require(!availableParams[_params[i]], "Parameter already exists");
             string memory name = _params[i];
             uint256 price = _prices[i];
             priceData[name] = price;
@@ -126,11 +123,11 @@ contract SubscriptionData is GovernanceOwnable {
         }
         stakedToken = IERC20(_stakedToken);
         escrow = _escrow;
-        require(isIncremental(slabAmounts_), "SubscriptionData: discount slabs array is not incremental");
-        require(isIncremental(slabPercents_), "SubscriptionData: discount percent array is not incremental");
+        require(isIncremental(slabAmounts_), "slabs array is not incremental");
+        require(isIncremental(slabPercents_), "percent array is not incremental");
         for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
-            require(slabAmounts_[i] > 0, "SubscriptionData: discount slab amount can not be zero");
-            require(slabPercents_[i] > 0, "SubscriptionData: discount slab percent can not be zero");
+            require(slabAmounts_[i] > 0, "discount slab amount can not be zero");
+            require(slabPercents_[i] > 0, "discount slab percent can not be zero");
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -143,7 +140,6 @@ contract SubscriptionData is GovernanceOwnable {
     function unsafeInc(uint x) private pure returns (uint) {
         unchecked { return x + 1;}
     }
-
     function isIncremental(uint256[] memory _nnn) public pure returns (bool) {
         bool incremental = true;
         for (uint256 i = 0; i < _nnn.length - 1; i++) {
@@ -164,15 +160,15 @@ contract SubscriptionData is GovernanceOwnable {
         external
         onlyManager
     {
-        require(_params.length > 0, "SubscriptionData: No parameters provided");
-        require(_prices.length > 0, "SubscriptionData: No prices provided");
+        require(_params.length > 0, "No parameters provided");
+        require(_prices.length > 0, "No prices provided");
         require(
             _params.length == _prices.length,
             "Subscription Data: unequal length of array"
         );
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
-            require(_prices[i] > 0, "SubscriptionData: Price of parameter can not be zero");
+            require(_prices[i] > 0, "Price of parameter can not be zero");
             uint256 price = _prices[i];
             priceData[name] = price;
             if (!availableParams[name]) {
@@ -188,8 +184,8 @@ contract SubscriptionData is GovernanceOwnable {
      * @param _params names of all the parameters to be deleted
      */
     function deleteParams(string[] memory _params) external onlyManager {
-        require(_params.length != 0, "Subscription Data: empty array");
-        require(_params.length <= MAX_NUMBER, "Subscription Data: too much parameters");
+        require(_params.length != 0, "empty array");
+        require(_params.length <= MAX_NUMBER, "too much parameters");
 
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             string memory name = _params[i];
@@ -208,7 +204,6 @@ contract SubscriptionData is GovernanceOwnable {
                 }
                 emit DeletedParameter(name);
             }
-            
         }
     }
     /**
@@ -220,7 +215,6 @@ contract SubscriptionData is GovernanceOwnable {
         escrow = _escrow;
         emit UpdateEscrow(_escrow);
     }
-
     /**
      * @notice returns discount slabs array
      */
@@ -241,7 +235,6 @@ contract SubscriptionData is GovernanceOwnable {
         }
         return _percent;
     }
-
     /**
      * @notice delete previously set discount slabs and input new discount slabs
      * @param slabAmounts_ array of amounts that seperates different slabs of discount
@@ -253,18 +246,18 @@ contract SubscriptionData is GovernanceOwnable {
     ) public onlyGovernanceAddress {
         require(
             slabAmounts_.length == slabPercents_.length,
-            "SubscriptionData: discount slabs array and discount amount array have different size"
+            "discount slabs array and discount amount array have different size"
         );
         require(
             slabPercents_.length <= MAX_NUMBER,
-            "SubscriptionData: discount slabs array can not be more than 10"
+            "discount slabs array can not be more than 10"
         );
         delete discountSlabs;
-        require(isIncremental(slabAmounts_), "SubscriptionData: discount slabs array is not incremental");
-        require(isIncremental(slabPercents_), "SubscriptionData: discount percent array is not incremental");
+        require(isIncremental(slabAmounts_), "discount slabs array is not incremental");
+        require(isIncremental(slabPercents_), "discount percent array is not incremental");
         for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
-            require(slabAmounts_[i] > 0, "SubscriptionData: discount slab amount can not be zero");
-            require(slabPercents_[i] > 0, "SubscriptionData: discount slab percent can not be zero");
+            require(slabAmounts_[i] > 0, "discount slab amount can not be zero");
+            require(slabPercents_[i] > 0, "discount slab percent can not be zero");
             Discount memory _discount = Discount(
                 slabAmounts_[i],
                 slabPercents_[i]
@@ -281,7 +274,7 @@ contract SubscriptionData is GovernanceOwnable {
     function enableDiscounts(address s) external onlyManager {
         require(
             s != address(0),
-            "SubscriptionData: staking manager address can not be zero address"
+            "staking manager address can not be zero address"
         );
         discountsEnabled = true;
         stakingManager = IStaking(s);
@@ -305,43 +298,43 @@ contract SubscriptionData is GovernanceOwnable {
         address[] memory priceFeedAddress_,
         uint128[] memory priceFeedPrecision_
     ) external onlyGovernanceAddress {
-        require(_symbols.length > 0, "SubscriptionData: No symbol provided");
-        require(_tokens.length > 0, "SubscriptionData: No token provided");
-        require(_decimals.length > 0, "SubscriptionData: No decimal provided");
+        require(_symbols.length > 0, "No symbol provided");
+        require(_tokens.length > 0, "No token provided");
+        require(_decimals.length > 0, "No decimal provided");
         require(
             _symbols.length == _tokens.length,
-            "SubscriptionData: token symbols and token address array length do not match"
+            "Invalid array"
         );
 
         require(
             _symbols.length == _decimals.length,
-            "SubscriptionData: token symbols and token decimal array length do not match"
+            "Invalid array"
         );
 
         require(
             _symbols.length == priceFeedAddress_.length,
-            "SubscriptionData: token symbols and price feed array length do not match"
+            "Invalid array"
         );
 
         require(
             _symbols.length == isChainLinkFeed_.length,
-            "SubscriptionData: token symbols and is chainlink array length do not match"
+            "Invalid array"
         );
         require(
             _symbols.length == priceFeedAddress_.length,
-            "SubscriptionData: token price feed  and token decimal array length do not match"
+            "Invalid array"
         );
         require(
             _symbols.length == priceFeedPrecision_.length,
-            "SubscriptionData: token price feed precision and token decimal array length do not match"
+            "Invalid array"
         );
 
         for (uint256 i = 0; i < _symbols.length; i = unsafeInc(i)) {
-            require(!acceptedTokens[_tokens[i]].accepted, "SubscriptionData: token already added");
-            require(_tokens[i] != address(0), "SubscriptionData: token address can not be zero address");
-            require(_decimals[i] > 0, "SubscriptionData: token decimal can not be zero");
+            require(!acceptedTokens[_tokens[i]].accepted, "token already added");
+            require(_tokens[i] != address(0), "token address can not be zero address");
+            require(_decimals[i] > 0, "token decimal can not be zero");
             bytes memory tempEmptyStringTest = bytes(_symbols[i]);
-            require(tempEmptyStringTest.length != 0, "SubscriptionData: token symbol can not be empty");
+            require(tempEmptyStringTest.length != 0, "token symbol can not be empty");
             Token memory token = Token(
                 _symbols[i],
                 _decimals[i],
@@ -370,12 +363,10 @@ contract SubscriptionData is GovernanceOwnable {
      * @param t token address
      */
     function removeTokens(address[] memory t) external onlyGovernanceAddress {
-        require(t.length > 0, "SubscriptionData: array length cannot be zero");
-        require(t.length <= MAX_NUMBER, "SubscriptionData: too many tokens to remove");
-
-
+        require(t.length > 0, "array length cannot be zero");
+        require(t.length <= MAX_NUMBER, "too many tokens to remove");
         for (uint256 i = 0; i < t.length; i = unsafeInc(i)) {
-            require(t[i] != address(0), "SubscriptionData: token address can not be zero address");
+            require(t[i] != address(0), "token address can not be zero address");
             if (acceptedTokens[t[i]].accepted) {
                 require(tokens.length > 1, "Cannot remove all payment tokens");
                 for (uint256 j = 0; j < tokens.length; j = unsafeInc(j)) {
@@ -391,20 +382,18 @@ contract SubscriptionData is GovernanceOwnable {
             }
         }
     }
-
     /**
      * @notice disable discounts for users
      */
     function disableDiscounts() external onlyManager {
         discountsEnabled = false;
     }
-
     /**
      * @notice change precision of USD value
      * @param p new precision value
      */
     function changeUsdPrecision(uint128 p) external onlyManager {
-        require(p != 0, "SubscriptionData: USD to precision can not be zero");
+        require(p != 0, "USD to precision can not be zero");
         usdPricePrecision = p;
     }
 
@@ -415,49 +404,9 @@ contract SubscriptionData is GovernanceOwnable {
     function updateStakedToken(address s) external onlyGovernanceAddress {
         require(
             s != address(0),
-            "SubscriptionData: staked token address can not be zero address"
+            "staked token address can not be zero address"
         );
         stakedToken = IERC20(s);
-    }
-
-   /**
-     * @notice get price of underlying token
-     * @param t underlying token address
-     * @return underlyingPrice of underlying token in usd
-     * @return timestamp of underlying token in usd
-     */
-    function getUnderlyingPrice(address t) public view returns (uint256 underlyingPrice, uint256 timestamp) {
-        Token memory acceptedToken = acceptedTokens[t];
-        require(acceptedToken.accepted, "Token is not accepted");
-        uint256 _price;
-        uint256 _timestamp;
-        if (acceptedToken.isChainLinkFeed) {
-            AggregatorV3Interface chainlinkFeed = AggregatorV3Interface(
-                acceptedToken.priceFeedAddress
-            );
-            (
-                uint80 roundID,
-                int256 price,
-                uint256 startedAt,
-                uint256 timeStamp,
-                uint80 answeredInRound
-            ) = chainlinkFeed.latestRoundData();
-            _price = uint256(price);
-            _timestamp = uint256(timeStamp);
-        } else {
-            IDiaOracle priceFeed = IDiaOracle(acceptedToken.priceFeedAddress);
-            (uint128 price, uint128 timeStamp) = priceFeed.getValue(
-                acceptedTokens[t].symbol
-            );
-            _price = price;
-            _timestamp = timeStamp;
-        }
-        uint256 price = _toPrecision(
-            uint256(_price),
-            acceptedToken.priceFeedPrecision,
-            acceptedToken.decimals
-        );
-        return (price, _timestamp);
     }
 
     /**
@@ -479,23 +428,6 @@ contract SubscriptionData is GovernanceOwnable {
             a = a * (10**uint128(-1 * decimalFactor));
         }
         return a;
-    }
-
-
-    /**
-     * @notice withdraw any erc20 send accidentally to the contract
-     * @param _token address of erc20 token
-     * @param a amount of tokens to withdraw
-     */
-    function withdrawERC20(address _token, uint256 a) external onlyManager {
-        require(_token != address(0), "SubscriptionData: token address can not be zero address");
-        require(a > 0, "Amount must be greater than 0");
-        IERC20 erc20 = IERC20(_token);
-        require(
-            erc20.balanceOf(address(this)) >= a,
-            "SubscriptionData: Insufficient tokens in contract"
-        );
-        erc20.safeTransfer(msg.sender, a);
     }
     
 }

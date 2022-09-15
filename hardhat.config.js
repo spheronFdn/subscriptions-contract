@@ -21,7 +21,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
     solidity: {
-        version: "0.8.16",
+        version: "0.8.17",
     }, 
     etherscan: {
         // Your API key for Etherscan
@@ -72,7 +72,7 @@ module.exports = {
             accounts: [process.env.ARBI_PRIVATE_KEY],
         },
         mumbai: {
-            url: 'https://rpc-mumbai.maticvigil.com/',
+            url: 'https://rpc.ankr.com/polygon_mumbai',
             accounts: [process.env.MUMBAI_PRIVATE_KEY],
         },
 

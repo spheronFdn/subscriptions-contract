@@ -6,8 +6,8 @@
 const hre = require("hardhat");
 const treasury = "0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5";
 const company = "0x3ae68d8eFB25C137aBd52F16f3fF3067856aa175";
-const data = "0xa7336a9e1adb36b31bf9bbe8b1fd738e64d9b8db";
-const forwarder = "0x67454E169d613a8e9BA6b06af2D267696EAaAf41"
+const data = "0xAc7062a6b08aB30a8E0C09353E3f57b7A2848cB3";
+const forwarder = "0x9399BB24DBB5C4b782C70c2969F58716Ebbd6a3b"
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -22,10 +22,10 @@ async function main() {
   const DePayments = await hre.ethers.getContractFactory("SubscriptionDePay");
   const dePayments = await DePayments.deploy(...constructorArgs);
   await dePayments.deployed();
-  await hre.run("verify:verify", {
-    address: "0x9C0a16a41d2b0fFc14e6f20Da1368b1FD93bD7e5",
-    constructorArguments: constructorArgs,
-  });
+  // await hre.run("verify:verify", {
+  //   address: "0x9C0a16a41d2b0fFc14e6f20Da1368b1FD93bD7e5",
+  //   constructorArguments: constructorArgs,
+  // });
   console.log("DePayments contract deployed to:", dePayments.address);
 }
 
