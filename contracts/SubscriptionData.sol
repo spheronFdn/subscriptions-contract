@@ -27,6 +27,7 @@ contract SubscriptionData is GovernanceOwnable {
     IERC20 public stakedToken;
 
     // would be true if discounts needs to be deducted
+    
     bool public discountsEnabled;
     //Data for discounts
     struct Discount {
@@ -49,11 +50,13 @@ contract SubscriptionData is GovernanceOwnable {
     //mapping of accpeted tokens
     mapping(address => Token) public acceptedTokens;
     //mapping of bool for accepted tokens
+
     mapping(address => bool) public isAcceptedToken;
 
     // list of accepted tokens
     address[] public tokens;
-    uint256 public constant MAX_NUMBER = 20;
+
+    uint256 public constant MAX_NUMBER = 50;
 
     //values prcision, it will be in USD, like USDPRICE * 10 **18
     uint128 public usdPricePrecision;
@@ -80,6 +83,7 @@ contract SubscriptionData is GovernanceOwnable {
      * @param slabPercents_ array of percent of discount user will get
      * @param _stakedToken address of staked token
      */
+
     constructor(
         string[] memory _params,
         uint256[] memory _prices,
@@ -107,10 +111,10 @@ contract SubscriptionData is GovernanceOwnable {
         require(_params.length > 0, "Invalid params");
         require(_prices.length > 0, "Invalid prices");
         require(
-            slabAmounts_.length > 0 && slabAmounts_.length <= MAX_NUMBER, 
+            slabAmounts_.length <= MAX_NUMBER, 
             "discount slabs out of range");
         require(
-            slabPercents_.length > 0 && slabPercents_.length <=MAX_NUMBER, 
+            slabPercents_.length <= MAX_NUMBER, 
             "discount percents out of range");
         for (uint256 i = 0; i < _params.length; i = unsafeInc(i)) {
             require(!availableParams[_params[i]], "Parameter already exists");
@@ -123,8 +127,6 @@ contract SubscriptionData is GovernanceOwnable {
         }
         stakedToken = IERC20(_stakedToken);
         escrow = _escrow;
-        require(isIncremental(slabAmounts_), "slabs array is not incremental");
-        require(isIncremental(slabPercents_), "percent array is not incremental");
         for (uint256 i = 0; i < slabAmounts_.length; i = unsafeInc(i)) {
             require(slabAmounts_[i] > 0, "discount slab amount can not be zero");
             require(slabPercents_[i] > 0, "discount slab percent can not be zero");
@@ -136,10 +138,12 @@ contract SubscriptionData is GovernanceOwnable {
         }
         usdPricePrecision = 18;
     }
+
     // unchecked iterator increment for gas optimization
     function unsafeInc(uint x) private pure returns (uint) {
         unchecked { return x + 1;}
     }
+
     function isIncremental(uint256[] memory _nnn) public pure returns (bool) {
         bool incremental = true;
         for (uint256 i = 0; i < _nnn.length - 1; i++) {
@@ -183,6 +187,7 @@ contract SubscriptionData is GovernanceOwnable {
      * @notice delete parameters
      * @param _params names of all the parameters to be deleted
      */
+
     function deleteParams(string[] memory _params) external onlyManager {
         require(_params.length != 0, "empty array");
         require(_params.length <= MAX_NUMBER, "too much parameters");
@@ -206,18 +211,22 @@ contract SubscriptionData is GovernanceOwnable {
             }
         }
     }
+
     /**
      * @notice update escrow address
      * @param _escrow address for new escrow
      */
+
     function updateEscrow(address _escrow) external onlyManager {
         require(escrow != address(0), "Subscription Data: Escrow address can not be zero address");
         escrow = _escrow;
         emit UpdateEscrow(_escrow);
     }
+
     /**
      * @notice returns discount slabs array
      */
+
     function slabs() external view returns(uint256[] memory) {
         uint256[] memory _slabs  = new uint256[](discountSlabs.length);
         for(uint256 i = 0 ; i< discountSlabs.length; i = unsafeInc(i)){
@@ -225,9 +234,11 @@ contract SubscriptionData is GovernanceOwnable {
         }
         return _slabs;
     }
+
     /**
      * @notice returns discount percents matched with slabs array
      */
+
     function discountPercents() external view returns(uint256[] memory) {
         uint256[] memory _percent  = new uint256[](discountSlabs.length);
         for(uint256 i = 0 ; i< discountSlabs.length; i = unsafeInc(i)){
@@ -235,11 +246,13 @@ contract SubscriptionData is GovernanceOwnable {
         }
         return _percent;
     }
+
     /**
      * @notice delete previously set discount slabs and input new discount slabs
      * @param slabAmounts_ array of amounts that seperates different slabs of discount
      * @param slabPercents_ array of percent of discount user will get
      */
+
     function updateDiscountSlabs(
         uint256[] memory slabAmounts_,
         uint256[] memory slabPercents_
@@ -266,7 +279,6 @@ contract SubscriptionData is GovernanceOwnable {
         }
     }
 
-
     /**
      * @notice enable discounts for users.
      * @param s address of staking manager
@@ -288,7 +300,6 @@ contract SubscriptionData is GovernanceOwnable {
      * @param isChainLinkFeed_ if price feed chain link feed
      * @param priceFeedAddress_ address of price feed
      * @param priceFeedPrecision_ precision of price feed
-
      */
     function addNewTokens(
         string[] memory _symbols,

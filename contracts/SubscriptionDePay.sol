@@ -20,20 +20,12 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         uint256 deposit;
         uint256 balance;
     }
-    // struct UserSub {
-    //     string[] params;
-    //     uint256[] values;
-    //     bool subscribed;
-    // }
-
-    // mapping(address => UserSub) public userSub;    
-
-    // (user => (token => UserData))
     mapping(address => mapping(address => UserData)) public userData;
 
-    uint256 public constant TIMESTAP_GAP = 21600;
+    uint256 public timeStampGap;
     
     // to temporarily pause the deposit and withdrawal function
+
     bool public pauseDeposit;
     bool public pauseWithdrawal;
 
@@ -57,7 +49,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
     event DepositStatusChanged(bool _status);
     event WithdrawalStatusChanged(bool _status);
     // event UserSubscribed(address indexed user, string[] params, uint256[] values);
-    constructor(address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder, _data) {
+    constructor(uint256 _timeStampGap, address _treasury, address _company, address _data, address _trustedForwarder) ERC2771Context(_trustedForwarder, _data) {
         require(
             _treasury != address(0),
             "SpheronSubscriptionPayments: Invalid address for treasury"
@@ -73,6 +65,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         subscriptionData = ISubscriptionData(_data);
         treasury = _treasury;
         company = _company;
+        timeStampGap = _timeStampGap;
         
     }
     // ROLES
@@ -134,9 +127,11 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         pendingCompany = _company;
         emit CompanyPendingSet(pendingCompany);
     }
+
     /**
      * @notice approve pending company address
      */
+
     function approveSetCompany(address _pendingCompany) external onlyOwnerOrManager {
         require(
             pendingCompany != address(0),
@@ -170,14 +165,11 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
             erc20.allowance(_msgSender(), address(this)) >= _amount,
             "SpheronPayments: Insufficient allowance"
         );
-        uint256 preAmount = erc20.balanceOf(treasury);
         erc20.safeTransferFrom(_msgSender(), treasury, _amount);
-        uint256 postAmount = erc20.balanceOf(treasury);
-        uint256 amount = (postAmount - preAmount);
-        totalDeposit[_token] += amount;
-        userData[_msgSender()][_token].deposit += amount;
-        userData[_msgSender()][_token].balance += amount;
-        emit UserDeposit(_msgSender(), _token, amount); 
+        totalDeposit[_token] += _amount;
+        userData[_msgSender()][_token].deposit += _amount;
+        userData[_msgSender()][_token].balance += _amount;
+        emit UserDeposit(_msgSender(), _token, _amount); 
     }
     /**
      * @notice user token withdrawal one of the accepted erc20 to the treasury
@@ -229,7 +221,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         );
         companyRevenue[_token] -= _amount;
         erc20.safeTransferFrom(treasury, company, _amount);
-        emit UserWithdraw(_msgSender(), _token, _amount); 
+        emit CompanyWithdraw(_token, _amount); 
     }
 
     /**
@@ -278,67 +270,6 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
         companyRevenue[_token] += underlying;
         emit UserCharged(_user, _token, underlying);
     }
-
-    /**
-     * @notice set params for recurring sub by user
-     * @param _params parameters for subscription
-     * @param _values list for subscription
-     */
-    // function setUserSub(
-    //     string[] memory _params,
-    //     uint256[] memory _values) external {
-    //     require(_params.length > 0, "SpheronSubscriptionPayments: No params");
-    //     require(
-    //         _params.length == _values.length,
-    //         "SpheronSubscriptionPayments: unequal length of array"
-    //     );
-    //     for(uint256 i = 0; i < _values.length; i = unsafeInc(i)) {
-    //         require(_values[i] > 0, "SpheronSubscriptionPayments: Invalid value");
-    //     }
-    //     userSub[_msgSender()].params = _params;
-    //     userSub[_msgSender()].values = _values;
-    //     userSub[_msgSender()].subscribed = true;
-    //     emit UserSubscribed(_msgSender(), _params, _values);
-    // }
-
-    /**
-     * @notice charge user for subscription
-     * @param _user user address
-     * @param _token address of token contract
-     */
-    // function chargeUserSub(
-    //     address _user,
-    //     address _token
-    // ) external onlyOwnerOrManager {
-
-    //     require(
-    //         userSub[_user].subscribed, 
-    //         "SpheronSubscriptionPayments: User not subscribed"
-    //     );
-        
-    //     require(
-    //         subscriptionData.isAcceptedToken(_token),
-    //         "SpheronSubscriptionPayments: Token not accepted"
-    //     );
-    //     string[] memory p = userSub[_user].params;
-    //     uint256[] memory v = userSub[_user].values;
-    //     uint256 fee = 0;
-
-
-    //     for (uint256 i = 0; i < p.length; i = unsafeInc(i)) {
-    //         fee += v[i] * subscriptionData.priceData(p[i]);
-    //     }
-    //     uint256 discountedFee = fee - _calculateDiscount(_user, fee);
-    //     uint256 underlying = _calculatePriceInToken(discountedFee, _token);
-    //     require(
-    //         underlying <= userData[_user][_token].balance,
-    //         "SpheronSubscriptionPayments: Balance must be less than or equal to amount charged"
-    //     );
-    //     userData[_user][_token].balance -= underlying;
-    //     totalCharges[_token] += underlying;
-    //     companyRevenue[_token] += underlying;
-    //     emit UserCharged(_user, _token, underlying);
-    // }
 
     /**
      * @notice change status for user deposit. On or off
@@ -459,7 +390,7 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
             uint256 underlyingPrice,
             uint256 timestamp
         ) = getUnderlyingPrice(t);
-        require((block.timestamp - timestamp) <= TIMESTAP_GAP, "SpheronSubscriptionPayments: underlying price not updated");
+        require((block.timestamp - timestamp) <= timeStampGap, "SpheronSubscriptionPayments: underlying price not updated");
         return (a * precision) / underlyingPrice;
     }
 
@@ -482,6 +413,10 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
             a = a * (10**uint128(-1 * decimalFactor));
         }
         return a;
+    }
+    function updateTimeStampGap(uint256 _timeStampGap) external onlyOwnerOrManager {
+        require(_timeStampGap > 0, "SpheronSubscriptionPayments: timestamp gap must be greater than 0");
+        timeStampGap = _timeStampGap;
     }
     /**
      * @notice Return user data
