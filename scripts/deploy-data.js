@@ -17,7 +17,7 @@ const hre = require("hardhat");
 // );
 const discountSlabs = [];
 const discountPercents = [];
-const argoTestToken = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
+const spheTestToken = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // const usdcTest = "0xE163A5689Dc303f5A7AFdbbb050432Fb5a8E7174";
 const escrow = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // let argoPriceFeed = "0x987aeea14c3638766ef05f66e64f7ea38ddc8dcd";
@@ -25,40 +25,42 @@ const escrow = "0xF7ec286A19CE6fe80c6A0d5CEb9528d9a87c9557";
 // const usdcFeedSymbol = "USDC/USD";
 // const usdcFeedAddress = "0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0";
 const params = [
+  "PACKAGE_PRO_FIRST",
   "PACKAGE_PRO",
   "PACKAGE_STARTER",
   "BONUS_BANDWIDTH",
-  "BONUS_BUILD_EXECUTION",
   "BONUS_CONCURRENT_BUILD",
-  "BONUS_STORAGE",
   "BONUS_DEPLOYMENT_PER_DAY",
-  "BONUS_DOMAIN_LIMIT",
   "BONS_HNS_DOMAIN_LIMIT",
   "BONUS_ENS_DOMAIN_LIMIT",
   "BONUS_ENVIRONMENTS",
+  "BONUS_STORAGE_ARWEAVE",
+  "BONUS_STORAGE_IPFS",
+  "BONUS_CLUSTER_AKT",
 ];
 const getConvertedPrice = (price) => {
   return ethers.utils.parseEther(price.toString());
 };
 const prices = [
-  getConvertedPrice(18),
+  getConvertedPrice(20),
+  getConvertedPrice(15),
   getConvertedPrice(0),
-  getConvertedPrice(0.5),
-  getConvertedPrice(0.0002),
-  getConvertedPrice(50),
-  getConvertedPrice(0.1),
+  getConvertedPrice(0.4),
+  getConvertedPrice(30),
   getConvertedPrice(0.01),
-  getConvertedPrice(0.2),
-  getConvertedPrice(0.2),
-  getConvertedPrice(0.2),
+  getConvertedPrice(1),
+  getConvertedPrice(1),
   getConvertedPrice(5),
+  getConvertedPrice(0.0033),
+  getConvertedPrice(0.0001),
+  getConvertedPrice(1),
 ];
 // const priceFeedPrecisions = [8, 8];
 // const priceFeedAddresses = [argoPriceFeed, usdcFeedAddress];
 // const priceFeedSymbols = [argoFeedSymbol, usdcFeedSymbol];
 // const isChainlink = [false, true];
 // const tokenDecimals = [18, 6];
-// const tokenAddresses = [argoTestToken, usdcTest];
+// const tokenAddresses = [spheTestToken, usdcTest];
 const priceFeedSymbols = ["WETH/USD", "WMATIC/USD", "USDT/USD", "DAI/USD"];
 const tokenName = ["WETH", "WMATIC", "USDT", "DAI"];
 const tokenAddresses = [
@@ -86,22 +88,22 @@ async function main() {
 
   // We get the contract to deploy
   // console.log(prices)
-  //   const Data = await hre.ethers.getContractFactory("SubscriptionData");
+  const Data = await hre.ethers.getContractFactory("SubscriptionData");
   const constructorArgs = [
     params,
     prices,
     escrow,
     discountSlabs,
     discountPercents,
-    argoTestToken,
+    spheTestToken,
   ];
-  //   const data = await Data.deploy(...constructorArgs);
-  //   await data.deployed();
-  await hre.run("verify:verify", {
-    address: "0x889124cD6Ef997fc7a2cE9ed9149866337F22f66",
-    constructorArguments: constructorArgs,
-  });
-  console.log("Payments contract deployed to:", data.address);
+    // const data = await Data.deploy(...constructorArgs);
+    // await data.deployed();
+    await hre.run("verify:verify", {
+      address: "0x75427d17bA81A4f960029C85aEba22809f3E10A7",
+      constructorArguments: constructorArgs,
+    });
+  // console.log("Data contract deployed to:", data.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

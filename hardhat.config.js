@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-etherscan");
-
+require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -21,18 +21,12 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
     solidity: {
-        version: "0.8.4",
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 1000,
-            },
-        },
-    },
+        version: "0.8.17",
+    }, 
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
-        apiKey: "EEGAHTH42UJXXTB3X1T5J5U7W8IGPUVSHB"
+        apiKey: "CCZ9FSNT1PRX74XPHHY6HVBWVZJKFFZ3RE"
     },
     networks: {
 
@@ -73,11 +67,13 @@ module.exports = {
                 mnemonic: 'company loud estate century olive gun tribe pulse bread play addict amount',
             },
         },
-        matic: {
-            url: `https://rpc-mumbai.maticvigil.com`, // <---- YOUR INFURA ID! (or it won't work)
-            accounts: {
-                mnemonic: process.env.MNEMONIC,
-            },
+        arbitrum: {
+            url: 'https://rinkeby.arbitrum.io/rpc',
+            accounts: [process.env.ARBI_PRIVATE_KEY],
+        },
+        mumbai: {
+            url: 'https://rpc.ankr.com/polygon_mumbai',
+            accounts: [process.env.MUMBAI_PRIVATE_KEY],
         },
 
     },

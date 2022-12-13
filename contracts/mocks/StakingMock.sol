@@ -74,7 +74,7 @@ contract StakingMock is ReentrancyGuard, Ownable {
         uint256 _epoch1Start,
         uint256 _epochDuration,
         address _communityVault
-    ) public {
+    ) {
         epoch1Start = _epoch1Start;
         epochDuration = _epochDuration;
         communityVault = _communityVault;

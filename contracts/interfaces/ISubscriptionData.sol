@@ -17,7 +17,7 @@ interface ISubscriptionData {
 
     function stakedToken() external view returns (address);
 
-    function getUnderlyingPrice(address t) external view returns (uint256);
+    function getUnderlyingPrice(address t) external view returns (uint256, uint256);
 
     function escrow() external view returns (address);
 
@@ -41,7 +41,7 @@ interface ISubscriptionData {
     function changeUsdPrecision(uint128 p) external;
 
     function acceptedTokens(address token)
-        external
+        external view
         returns (
             string memory symbol,
             uint128 decimals,
@@ -52,4 +52,6 @@ interface ISubscriptionData {
             uint128 priceFeedPrecision
         );
     function isAcceptedToken(address token) external returns (bool);
+
+    function isManager(address user) external returns (bool);
 }

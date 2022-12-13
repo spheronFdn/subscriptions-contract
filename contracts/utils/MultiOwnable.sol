@@ -10,7 +10,7 @@ contract MultiOwnable {
 
     event RemoveManagers(address[] managers);
 
-    event ChangeOwner(address owner);
+    event ChangeOwner(address indexed owner);
 
     modifier onlyManager() {
         require(
@@ -37,6 +37,7 @@ contract MultiOwnable {
      * @param m list of addresses that are to be added as managers
      */
     function setManagers(address[] memory m) public onlyOwner {
+        require(m.length > 0, "At least one manager must be set");
         _setManagers(m);
     }
 
@@ -54,6 +55,7 @@ contract MultiOwnable {
      */
     function _setManagers(address[] memory m) internal {
         for (uint256 j = 0; j < m.length; j++) {
+            require(m[j] != address(0), "Address cannot be zero address");
             if (!managerByAddress[m[j]]) {
                 managerByAddress[m[j]] = true;
                 managers.push(m[j]);
@@ -67,6 +69,7 @@ contract MultiOwnable {
      * @param m list of addresses that are to be removed from managers
      */
     function _removeManagers(address[] memory m) internal {
+        require(m.length > 0, "At least one manager must be removed");
         for (uint256 j = 0; j < m.length; j++) {
             if (managerByAddress[m[j]]) {
                 for (uint256 k = 0; k < managers.length; k++) {
@@ -87,6 +90,7 @@ contract MultiOwnable {
      * @param o address of new owner
      */
     function changeOwner(address o) external onlyOwner {
+        require(o != address(0), "New owner cannot be zero address");
         owner = o;
         emit ChangeOwner(o);
     }
@@ -97,5 +101,17 @@ contract MultiOwnable {
      */
     function getManagers() external view returns (address[] memory) {
         return managers;
+    }
+
+    /**
+     * @dev get list of all managers
+     * @return list of all managers
+     */
+
+    function isManager(address addr) public view returns (bool) {
+        if(managerByAddress[addr] == true || addr == owner) {
+            return true;
+        }
+        return false;
     }
 }
