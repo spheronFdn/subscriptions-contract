@@ -37,6 +37,7 @@ const params = [
   "BONUS_STORAGE_ARWEAVE",
   "BONUS_STORAGE_IPFS",
   "BONUS_CLUSTER_AKT",
+  "BONUS_PASSWORD_PROTECTION",
 ];
 const getConvertedPrice = (price) => {
   return ethers.utils.parseEther(price.toString());
@@ -54,6 +55,7 @@ const prices = [
   getConvertedPrice(0.0033),
   getConvertedPrice(0.0001),
   getConvertedPrice(1),
+  getConvertedPrice(120),
 ];
 // const priceFeedPrecisions = [8, 8];
 // const priceFeedAddresses = [argoPriceFeed, usdcFeedAddress];
