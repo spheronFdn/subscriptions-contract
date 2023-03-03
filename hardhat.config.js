@@ -1,32 +1,39 @@
+require("@nomiclabs/hardhat-ethers")
 require("@nomiclabs/hardhat-etherscan");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
+require('hardhat-deploy');
 const dotenv = require("dotenv");
 dotenv.config();
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
 
-    for (const account of accounts) {
-        console.log(account.address);
-    }
-});
-
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
     solidity: {
-        version: "0.8.17",
+        version: "0.8.19",
     }, 
+    settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200,
+        },
+      },
     etherscan: {
         // Your API key for Etherscan
         // Obtain one at https://etherscan.io/
         apiKey: "CCZ9FSNT1PRX74XPHHY6HVBWVZJKFFZ3RE"
+    },
+    namedAccounts: {
+        deployer: {
+            default: 0, // here this will by default take the first account as deployer
+            1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+            4: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // but for rinkeby it will be a specific address
+            97	: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // but for bnb testnet it will be a specific address
+            "goerli": '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', //it can also specify a specific netwotk name (specified in hardhat.config.js)
+        },
+        feeCollector:{
+            default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
+            1: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // on the mainnet the feeCollector could be a multi sig
+            4: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // on rinkeby it could be another account
+        }
     },
     networks: {
 
@@ -50,10 +57,8 @@ module.exports = {
 
         },
         goerli: {
-            url: `https://goerli.infura.io/v3/8b8d0c60bfab43bc8725df20fc660d15`, // <---- YOUR INFURA ID! (or it won't work)
-            accounts: {
-                mnemonic: 'company loud estate century olive gun tribe pulse bread play addict amount',
-            },
+            url: 'https://goerli.blockpi.network/v1/rpc/public',
+            accounts: [process.env.PRIVATE_KEY],
         },
         rinkeby: {
             url: `https://rinkeby.infura.io/v3/0e4ce57afbd04131b6842f08265b4d4b`, // <---- YOUR INFURA ID! (or it won't work)
@@ -69,12 +74,16 @@ module.exports = {
         },
         arbitrum: {
             url: 'https://rinkeby.arbitrum.io/rpc',
-            accounts: [process.env.ARBI_PRIVATE_KEY],
+            accounts: [process.env.PRIVATE_KEY],
         },
         mumbai: {
             url: 'https://rpc.ankr.com/polygon_mumbai',
-            accounts: [process.env.MUMBAI_PRIVATE_KEY],
+            accounts: [process.env.PRIVATE_KEY],
         },
+        bnb: {
+            url: 'https://bsc-testnet.public.blastapi.io',
+            accounts: [process.env.PRIVATE_KEY],
+        }
 
     },
 
