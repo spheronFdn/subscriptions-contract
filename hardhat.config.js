@@ -25,14 +25,14 @@ module.exports = {
         deployer: {
             default: 0, // here this will by default take the first account as deployer
             1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
-            4: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // but for rinkeby it will be a specific address
-            97	: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // but for bnb testnet it will be a specific address
-            "goerli": '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', //it can also specify a specific netwotk name (specified in hardhat.config.js)
+            4: '[process.env.DEPLOYER_ADDRESS]', // but for rinkeby it will be a specific address
+            97	: '[process.env.DEPLOYER_ADDRESS]', // but for bnb testnet it will be a specific address
+            "goerli": '[process.env.DEPLOYER_ADDRESS]', //it can also specify a specific netwotk name (specified in hardhat.config.js)
         },
         feeCollector:{
             default: 1, // here this will by default take the second account as feeCollector (so in the test this will be a different account than the deployer)
-            1: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // on the mainnet the feeCollector could be a multi sig
-            4: '0x562937835cdD5C92F54B94Df658Fd3b50A68ecD5', // on rinkeby it could be another account
+            1: '[process.env.DEPLOYER_ADDRESS]', // on the mainnet the feeCollector could be a multi sig
+            4: '[process.env.DEPLOYER_ADDRESS]', // on rinkeby it could be another account
         }
     },
     networks: {
