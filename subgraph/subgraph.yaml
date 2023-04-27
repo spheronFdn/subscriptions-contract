@@ -1,0 +1,31 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SubscriptionDePay
+    network: [NETWORK]
+    source:
+      address: [CONTRACT_ADDRESS]
+      abi: SubscriptionDePay
+      startBlock: 6507
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - CompanyWithdraw
+        - UserCharged
+        - UserDeposit
+        - UserWithdraw
+      abis:
+        - name: SubscriptionDePay
+          file: ./abis/SubscriptionDePay.json
+      eventHandlers:
+        - event: UserCharged(indexed address,indexed address,uint256)
+          handler: handleUserCharged
+        - event: UserDeposit(indexed address,indexed address,uint256)
+          handler: handleUserDeposit
+        - event: UserWithdraw(indexed address,indexed address,uint256)
+          handler: handleUserWithdraw
+      file: ./src/subscription-de-pay.ts

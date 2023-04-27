@@ -1,0 +1,33 @@
+type Deposit @entity {
+  id: ID!
+  user: User!
+  token: Bytes! # address
+  amount: BigInt! # uint256
+  createdAt: BigInt!
+}
+type Withdrawal @entity {
+  id: ID!
+  user: User!
+  token: Bytes! # address
+  amount: BigInt! # uint256
+  createdAt: BigInt!
+}
+type Charges @entity {
+  id: ID!
+  user: User!
+  amount: BigInt! # uint256
+  createdAt: BigInt!
+}
+type Balance @entity {
+  id: ID!
+  user: User!
+  token: Bytes! # address
+  amount: BigInt! # uint256
+}
+type User @entity {
+  id: ID!
+  deposit: [Deposit!]! @derivedFrom(field: "user")
+  charges: [Charges!]! @derivedFrom(field: "user")
+  withdraw: [Withdrawal!]! @derivedFrom(field: "user")
+  balance: [Balance!]! @derivedFrom(field: "user")
+}

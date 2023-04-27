@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -240,11 +240,11 @@ contract SubscriptionData is GovernanceOwnable {
      */
 
     function discountPercents() external view returns(uint256[] memory) {
-        uint256[] memory _percent  = new uint256[](discountSlabs.length);
+        uint256[] memory _percentage  = new uint256[](discountSlabs.length);
         for(uint256 i = 0 ; i< discountSlabs.length; i = unsafeInc(i)){
-            _percent[i] = discountSlabs[i].percent;
+            _percentage[i] = discountSlabs[i].percent;
         }
-        return _percent;
+        return _percentage;
     }
 
     /**

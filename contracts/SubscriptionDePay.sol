@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 import "./interfaces/ISubscriptionData.sol";
 import "./interfaces/IStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -78,22 +78,18 @@ contract SubscriptionDePay is ReentrancyGuard, ERC2771Context {
      *
      */
     modifier onlyOwnerOrManager() {
-        bool hasAccess = subscriptionData.isManager(_msgSender());
         require(
-            hasAccess,
+            subscriptionData.isManager(_msgSender()),
             "Only manager and owner can call this function"
         );
         _;
     }
     /**
-     * @notice only company modifier
-     *
-     */
+        * @notice only company modifier
+    */
     modifier onlyCompany() {
-        require(
-            _msgSender() == company || subscriptionData.isManager(_msgSender()),
-            "Only company and managers can call this function"
-        );
+        address sender = _msgSender();
+        require(sender == company || subscriptionData.isManager(sender), "Only company and managers can call this function");
         _;
     }
     /**
