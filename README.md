@@ -1,16 +1,9 @@
-
-<p  align="center">
-
-<picture>
-
-<source  media="(prefers-color-scheme: dark)"  srcset="https://res.cloudinary.com/letech-digital-solutions/image/upload/v1676660656/logo_wbzt7w.svg">
-
-<source  media="(prefers-color-scheme: light)"  srcset="https://res.cloudinary.com/letech-digital-solutions/image/upload/v1676660649/logo-dark_llnlr2.svg">
-
-<img  alt="Spheron"  src="https://res.cloudinary.com/letech-digital-solutions/image/upload/v1676660656/logo_wbzt7w.svg"  width="250">
-
-</picture>
-
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/spheronFdn/fns/blob/main/.github/assets/spheron-logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/spheronFdn/fns/blob/main/.github/assets/spheron-logo.svg">
+    <img alt="Spheron" src="https://github.com/spheronFdn/fns/blob/main/.github/assets/spheron-logo.svg" width="250">
+  </picture>
 </p>
 
   
